@@ -6,6 +6,7 @@ import { useAuthStore } from "@/stores/auth";
 import { AuthGuard } from "@/components/layout/AuthGuard";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Dashboard } from "@/pages/Dashboard";
+import { ProjectDetail } from "@/pages/ProjectDetail";
 import { Write } from "@/pages/Write";
 import { Outline } from "@/pages/Outline";
 import { World } from "@/pages/World";
@@ -55,6 +56,7 @@ export default function App() {
               }
             >
               <Route index element={<Dashboard />} />
+              <Route path="project/:id" element={<ProjectDetail />} />
               <Route path="write" element={<Write />} />
               <Route path="outline" element={<Outline />} />
               <Route path="world" element={<World />} />

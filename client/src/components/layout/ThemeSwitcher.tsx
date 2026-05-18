@@ -53,8 +53,7 @@ export function ThemeSwitcher() {
                 style={{
                   backgroundColor: t.color,
                   color: "#fff",
-                  ringColor: t.color,
-                  ringOffsetColor: "var(--surface)",
+                  boxShadow: current === t.key ? `0 0 0 2px var(--surface), 0 0 0 4px ${t.color}` : undefined,
                 }}
                 title={t.label}
               >

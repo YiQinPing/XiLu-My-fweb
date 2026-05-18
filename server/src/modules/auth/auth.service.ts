@@ -3,11 +3,14 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || "dev-secret";
 const TOKEN_EXPIRY = "24h";
 
+function getSecret(): string {
+  return process.env.JWT_SECRET || "dev-secret";
+}
+
 function generateToken(userId: string, email: string): string {
-  return jwt.sign({ sub: userId, email }, JWT_SECRET, { expiresIn: TOKEN_EXPIRY });
+  return jwt.sign({ sub: userId, email }, getSecret(), { expiresIn: TOKEN_EXPIRY });
 }
 
 function sanitizeUser(user: { id: string; email: string; displayName: string; avatarUrl: string | null; createdAt: Date }) {
