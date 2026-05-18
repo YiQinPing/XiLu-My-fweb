@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Plus, Trash2, Globe, MapPin, Building2, Package, ChevronDown, ChevronRight } from "lucide-react";
+import { Plus, Trash2, Globe, MapPin, Building2, Package, ChevronDown, ChevronRight, X } from "lucide-react";
 import { listProjects, type Project } from "@/api/project";
 import {
   listLocations, createLocation, updateLocation, deleteLocation, type LocationNode,
@@ -14,7 +14,7 @@ function LocNode({ node, depth, onDelete, onAdd, onEdit }: {
   node: LocationNode; depth: number;
   onDelete: (id: string) => void;
   onAdd: (parentId: string | null) => void;
-  onEdit: (id: string, name: string) => void;
+  onEdit: (node: LocationNode) => void;
 }) {
   const [open, setOpen] = useState(true);
   return (
@@ -24,7 +24,9 @@ function LocNode({ node, depth, onDelete, onAdd, onEdit }: {
         {node.children.length > 0 ? (
           <button onClick={() => setOpen(!open)} className="p-0.5">{open ? <ChevronDown size={12} /> : <ChevronRight size={12} />}</button>
         ) : <span className="w-4" />}
-        <span className="flex-1 text-sm" style={{ color: "var(--text-primary)" }}>{node.name}</span>
+        <button onClick={() => onEdit(node)} className="flex-1 text-left text-sm hover:underline" style={{ color: "var(--text-primary)" }}>
+          {node.name}
+        </button>
         {node.type && <span className="text-[10px] px-1.5 py-0.5 rounded" style={{ backgroundColor: "var(--bg-secondary)", color: "var(--text-secondary)" }}>{node.type}</span>}
         <div className="opacity-0 group-hover:opacity-100 flex gap-0.5">
           <button onClick={() => onAdd(node.id)} className="p-0.5"><Plus size={12} style={{ color: "var(--text-secondary)" }} /></button>
@@ -45,15 +47,20 @@ export function World() {
   const [tab, setTab] = useState<Tab>("locations");
   const [loading, setLoading] = useState(false);
 
-  // 数据
   const [locations, setLocations] = useState<LocationNode[]>([]);
   const [factions, setFactions] = useState<FactionItem[]>([]);
   const [items, setItems] = useState<ItemData[]>([]);
 
-  // 新建
+  // Create modal
   const [showCreate, setShowCreate] = useState(false);
   const [createName, setCreateName] = useState("");
-  const [createExtra, setCreateExtra] = useState(""); // type or parent placeholder
+  const [createExtra, setCreateExtra] = useState("");
+
+  // Edit modal
+  const [editTarget, setEditTarget] = useState<{ id: string; name: string; type?: string | null; description?: string | null } | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editType, setEditType] = useState("");
+  const [editDesc, setEditDesc] = useState("");
 
   useEffect(() => { listProjects().then(setProjects).catch(() => {}); }, []);
 
@@ -99,6 +106,29 @@ export function World() {
     refresh();
   };
 
+  const openEdit = (entity: { id: string; name: string; type?: string | null; description?: string | null }) => {
+    setEditTarget(entity);
+    setEditName(entity.name);
+    setEditType(entity.type || "");
+    setEditDesc(entity.description || "");
+  };
+
+  const handleEdit = async () => {
+    if (!editTarget || !editName.trim()) return;
+    const data: Record<string, any> = { name: editName.trim() };
+    if (tab !== "locations") data.type = editType || null;
+    data.description = editDesc || null;
+
+    if (tab === "locations") await updateLocation(editTarget.id, data);
+    else if (tab === "factions") await updateFaction(editTarget.id, data);
+    else await updateItem(editTarget.id, data);
+
+    setEditTarget(null);
+    refresh();
+  };
+
+  const stats = { locations: countLocNodes(locations), factions: factions.length, items: items.length };
+
   if (!projectId) {
     return (
       <div className="flex h-full flex-col items-center justify-center gap-4" style={{ backgroundColor: "var(--bg-primary)" }}>
@@ -133,6 +163,21 @@ export function World() {
         </button>
       </div>
 
+      {/* 统计卡片 */}
+      <div className="flex gap-4 px-8 mb-4">
+        {[
+          { icon: MapPin, label: "地点", count: stats.locations, color: "#6cc070" },
+          { icon: Building2, label: "势力", count: stats.factions, color: "#c1554b" },
+          { icon: Package, label: "物品", count: stats.items, color: "#f0c75e" },
+        ].map((s) => (
+          <div key={s.label} className="flex items-center gap-2 rounded-lg px-4 py-2" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+            <s.icon size={16} style={{ color: s.color }} />
+            <span className="text-lg font-medium" style={{ color: "var(--text-primary)" }}>{s.count}</span>
+            <span className="text-[10px]" style={{ color: "var(--text-secondary)" }}>{s.label}</span>
+          </div>
+        ))}
+      </div>
+
       {/* Tab 切换 */}
       <div className="flex gap-1 px-8 mb-4">
         {[
@@ -163,7 +208,7 @@ export function World() {
           ) : (
             <div className="rounded-lg p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
               {locations.map((loc) => (
-                <LocNode key={loc.id} node={loc} depth={0} onDelete={handleDeleteLoc} onAdd={handleAddLoc} onEdit={() => {}} />
+                <LocNode key={loc.id} node={loc} depth={0} onDelete={handleDeleteLoc} onAdd={handleAddLoc} onEdit={(n) => openEdit(n)} />
               ))}
             </div>
           )
@@ -176,15 +221,17 @@ export function World() {
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {factions.map((f) => (
-                <div key={f.id} className="rounded-lg p-4 animate-fade-in" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                <div key={f.id} onClick={() => openEdit(f)}
+                  className="rounded-lg p-4 animate-fade-in cursor-pointer hover:brightness-95 transition-all"
+                  style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
                   <div className="flex items-start justify-between">
                     <h3 className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{f.name}</h3>
-                    <button onClick={async () => { if (confirm("确定删除？")) { await deleteFaction(f.id); refresh(); } }}
+                    <button onClick={async (e) => { e.stopPropagation(); if (confirm("确定删除？")) { await deleteFaction(f.id); refresh(); } }}
                       className="p-1 rounded hover:brightness-90"><Trash2 size={12} style={{ color: "#c1554b" }} /></button>
                   </div>
                   {f.fullName && <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>{f.fullName}</p>}
                   {f.type && <span className="inline-block mt-2 text-[10px] rounded px-1.5 py-0.5" style={{ backgroundColor: "var(--bg-secondary)", color: "var(--text-secondary)" }}>{f.type}</span>}
-                  {f.description && <p className="text-xs mt-2" style={{ color: "var(--text-secondary)", opacity: 0.7 }}>{f.description}</p>}
+                  {f.description && <p className="text-xs mt-2" style={{ color: "var(--text-secondary)", opacity: 0.7 }}>{f.description.length > 60 ? f.description.slice(0, 60) + "..." : f.description}</p>}
                   {f.members && f.members.length > 0 && (
                     <p className="text-[10px] mt-2" style={{ color: "var(--accent)" }}>{f.members.length} 位成员</p>
                   )}
@@ -201,17 +248,19 @@ export function World() {
           ) : (
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {items.map((it) => (
-                <div key={it.id} className="rounded-lg p-4 animate-fade-in" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                <div key={it.id} onClick={() => openEdit(it)}
+                  className="rounded-lg p-4 animate-fade-in cursor-pointer hover:brightness-95 transition-all"
+                  style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
                   <div className="flex items-start justify-between">
                     <h3 className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{it.name}</h3>
-                    <button onClick={async () => { if (confirm("确定删除？")) { await deleteItem(it.id); refresh(); } }}
+                    <button onClick={async (e) => { e.stopPropagation(); if (confirm("确定删除？")) { await deleteItem(it.id); refresh(); } }}
                       className="p-1 rounded hover:brightness-90"><Trash2 size={12} style={{ color: "#c1554b" }} /></button>
                   </div>
                   {it.type && <span className="inline-block mt-2 text-[10px] rounded px-1.5 py-0.5" style={{ backgroundColor: "var(--bg-secondary)", color: "var(--text-secondary)" }}>{it.type}</span>}
                   {it.powerLevel && it.powerLevel !== "COMMON" && (
                     <span className="inline-block mt-2 ml-1 text-[10px] rounded px-1.5 py-0.5" style={{ backgroundColor: "var(--accent)" + "22", color: "var(--accent)" }}>{it.powerLevel}</span>
                   )}
-                  {it.description && <p className="text-xs mt-2" style={{ color: "var(--text-secondary)", opacity: 0.7 }}>{it.description}</p>}
+                  {it.description && <p className="text-xs mt-2" style={{ color: "var(--text-secondary)", opacity: 0.7 }}>{it.description.length > 60 ? it.description.slice(0, 60) + "..." : it.description}</p>}
                   {it.currentOwner && <p className="text-[10px] mt-2" style={{ color: "var(--accent)" }}>持有者：{it.currentOwner.name}</p>}
                   {it.isKeyItem && <span className="text-[10px]" style={{ color: "#c1554b" }}>关键物品</span>}
                 </div>
@@ -251,6 +300,63 @@ export function World() {
           </div>
         </>
       )}
+
+      {/* 编辑弹窗 */}
+      {editTarget && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setEditTarget(null)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="w-full max-w-md rounded-lg p-6 animate-fade-in" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-light" style={{ color: "var(--text-primary)" }}>
+                  编辑{tab === "locations" ? "地点" : tab === "factions" ? "势力" : "物品"}
+                </h2>
+                <button onClick={() => setEditTarget(null)} className="p-1"><X size={16} style={{ color: "var(--text-secondary)" }} /></button>
+              </div>
+
+              <div className="space-y-3">
+                <input autoFocus type="text" placeholder="名称" value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleEdit()}
+                  className="w-full rounded-md px-3 py-2 text-sm outline-none"
+                  style={{ backgroundColor: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
+
+                {tab !== "locations" && (
+                  <input type="text" placeholder="类型" value={editType}
+                    onChange={(e) => setEditType(e.target.value)}
+                    className="w-full rounded-md px-3 py-2 text-sm outline-none"
+                    style={{ backgroundColor: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
+                )}
+
+                {tab === "locations" && (
+                  <input type="text" placeholder="类型（如：城市、森林...）" value={editType}
+                    onChange={(e) => setEditType(e.target.value)}
+                    className="w-full rounded-md px-3 py-2 text-sm outline-none"
+                    style={{ backgroundColor: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
+                )}
+
+                <textarea placeholder="描述" value={editDesc}
+                  onChange={(e) => setEditDesc(e.target.value)}
+                  rows={3} className="w-full rounded-md px-3 py-2 text-sm outline-none resize-none"
+                  style={{ backgroundColor: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
+              </div>
+
+              <div className="mt-4 flex justify-end gap-2">
+                <button onClick={() => setEditTarget(null)} className="rounded-md px-4 py-2 text-xs" style={{ color: "var(--text-secondary)" }}>取消</button>
+                <button onClick={handleEdit} disabled={!editName.trim()}
+                  className="rounded-md px-4 py-2 text-xs font-medium"
+                  style={{ backgroundColor: "var(--accent)", color: "#fff", opacity: !editName.trim() ? 0.6 : 1 }}>保存</button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
+}
+
+function countLocNodes(nodes: LocationNode[]): number {
+  let count = nodes.length;
+  for (const n of nodes) count += countLocNodes(n.children);
+  return count;
 }
