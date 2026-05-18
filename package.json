@@ -1,0 +1,21 @@
+{
+  "name": "xilu-flow",
+  "version": "0.1.0",
+  "private": true,
+  "description": "希陆Flow - 小说写作辅助平台",
+  "scripts": {
+    "dev": "concurrently \"pnpm --filter @xilu-flow/client dev\" \"pnpm --filter @xilu-flow/server dev\"",
+    "dev:client": "pnpm --filter @xilu-flow/client dev",
+    "dev:server": "pnpm --filter @xilu-flow/server dev",
+    "build": "pnpm --filter @xilu-flow/client build && pnpm --filter @xilu-flow/server build",
+    "lint": "pnpm -r lint",
+    "format": "prettier --write \"**/*.{ts,tsx,json,css,md}\"",
+    "db:migrate": "pnpm --filter @xilu-flow/server db:migrate",
+    "db:studio": "pnpm --filter @xilu-flow/server db:studio"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "prettier": "^3.2.5",
+    "typescript": "^5.4.0"
+  }
+}

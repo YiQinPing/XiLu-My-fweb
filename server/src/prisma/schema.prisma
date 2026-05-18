@@ -1,0 +1,593 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ==================== 用户与认证 ====================
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  passwordHash String
+  displayName  String
+  avatarUrl    String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  projects    Project[]
+  preferences UserPreference[]
+}
+
+model UserPreference {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key       String
+  value     String   // JSON 字符串
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, key])
+}
+
+// ==================== 作品管理 ====================
+
+model Project {
+  id              String       @id @default(uuid())
+  userId          String
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title           String
+  subtitle        String?
+  genre           String       @default("")  // JSON 数组
+  targetWordCount Int?
+  language        String       @default("zh-CN")
+  writingStage    String       @default("PLANNING")
+  description     String?
+  coverUrl        String?
+  isArchived      Boolean      @default(false)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  volumes         Volume[]
+  characters      Character[]
+  locations       Location[]
+  factions        Faction[]
+  items           Item[]
+  timelines       Timeline[]
+  foreshadowings  Foreshadowing[]
+  inspirations    Inspiration[]
+  outlineBeats    OutlineBeat[]
+  dailyStats      DailyStats[]
+  writingSessions WritingSession[]
+  searchIndices   SearchIndex[]
+  timelineEvents  TimelineEvent[]
+}
+
+// ==================== 正文写作 ====================
+
+model Volume {
+  id              String   @id @default(uuid())
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title           String
+  subtitle        String?
+  sequenceNum     Int
+  status          String   @default("DRAFTING")
+  synopsis        String?
+  targetWordCount Int?
+  actualWordCount Int      @default(0)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  chapters Chapter[]
+
+  @@unique([projectId, sequenceNum])
+}
+
+model Chapter {
+  id              String   @id @default(uuid())
+  volumeId        String
+  volume          Volume   @relation(fields: [volumeId], references: [id], onDelete: Cascade)
+  chapterNumber   String
+  title           String
+  chapterType     String   @default("REGULAR")
+  status          String   @default("OUTLINE")
+  povCharacterId  String?
+  povCharacter    Character? @relation("POVChapters", fields: [povCharacterId], references: [id], onDelete: SetNull)
+  targetWordCount Int?
+  actualWordCount Int      @default(0)
+  synopsis        String?
+  tags            String   @default("[]") // JSON 数组
+  isLocked        Boolean  @default(false)
+  authorNotes     String?
+  content         String?  // TipTap JSON
+  sortOrder       Int
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  scenes                Scene[]
+  drafts                DraftSnapshot[]
+  annotations           Annotation[]
+  outlineLinks          OutlineBeat[]
+  plantedForeshadowings Foreshadowing[] @relation("PlantedIn")
+  revealedForeshadowings Foreshadowing[] @relation("RevealedIn")
+  timelineEventChapters  TimelineEventChapter[]
+  writingSessions        WritingSession[]
+
+  @@unique([volumeId, sortOrder])
+}
+
+model Scene {
+  id              String   @id @default(uuid())
+  chapterId       String
+  chapter         Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  title           String?
+  summary         String?
+  wordCount       Int      @default(0)
+  povCharacterId  String?
+  povCharacter    Character? @relation("POVScenes", fields: [povCharacterId], references: [id], onDelete: SetNull)
+  locationId      String?
+  location        Location?  @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  storyTime       String?
+  mood            String?
+  tone            String?
+  conflictType    String?
+  sortOrder       Int
+  separator       String?  @default("***")
+  timelineEventId String?
+  timelineEvent   TimelineEvent? @relation(fields: [timelineEventId], references: [id], onDelete: SetNull)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  participants SceneCharacter[]
+}
+
+model SceneCharacter {
+  id          String  @id @default(uuid())
+  sceneId     String
+  scene       Scene   @relation(fields: [sceneId], references: [id], onDelete: Cascade)
+  characterId String
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  role        String  @default("PRESENT")
+
+  @@unique([sceneId, characterId])
+}
+
+model DraftSnapshot {
+  id           String   @id @default(uuid())
+  chapterId    String
+  chapter      Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  content      String
+  wordCount    Int
+  snapshotType String   @default("AUTO")
+  label        String?
+  description  String?
+  createdAt    DateTime @default(now())
+}
+
+model Annotation {
+  id        String   @id @default(uuid())
+  chapterId String
+  chapter   Chapter  @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  textRange String   // JSON
+  content   String
+  type      String   @default("SELF_NOTE")
+  status    String   @default("OPEN")
+  parentId  String?
+  parent    Annotation? @relation("AnnotationReplies", fields: [parentId], references: [id], onDelete: SetNull)
+  replies   Annotation[] @relation("AnnotationReplies")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// ==================== 大纲 ====================
+
+model OutlineBeat {
+  id                 String   @id @default(uuid())
+  projectId          String
+  project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  chapterId          String?
+  chapter            Chapter? @relation(fields: [chapterId], references: [id], onDelete: SetNull)
+  parentId           String?
+  parent             OutlineBeat? @relation("BeatHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children           OutlineBeat[] @relation("BeatHierarchy")
+  title              String
+  description        String?
+  beatType           String?
+  structureName      String?
+  positionPercent    Int?
+  emotionalIntensity Int?
+  conflictLevel      Int?
+  status             String?
+  plotThread         String?
+  sortOrder          Int
+  color              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  linkedCharacters OutlineBeatCharacter[]
+}
+
+model OutlineBeatCharacter {
+  id          String      @id @default(uuid())
+  beatId      String
+  beat        OutlineBeat @relation(fields: [beatId], references: [id], onDelete: Cascade)
+  characterId String
+  character   Character   @relation(fields: [characterId], references: [id], onDelete: Cascade)
+
+  @@unique([beatId, characterId])
+}
+
+// ==================== 人物 ====================
+
+model Character {
+  id                     String   @id @default(uuid())
+  projectId              String
+  project                Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name                   String
+  aliases                String   @default("[]")
+  gender                 String?
+  apparentAge            Int?
+  actualAge              Int?
+  birthday               String?
+  birthPlaceId           String?
+  birthPlace             Location? @relation("CharacterBirthPlace", fields: [birthPlaceId], references: [id], onDelete: SetNull)
+  residenceId            String?
+  residence              Location? @relation("CharacterResidence", fields: [residenceId], references: [id], onDelete: SetNull)
+  species                String?
+  nationality            String?
+  occupations            String   @default("[]")
+  socialClass            String?
+  characterStatus        String   @default("ALIVE")
+  avatarUrl              String?
+  height                 String?
+  build                  String?
+  skinTone               String?
+  hairColor              String?
+  hairStyle              String?
+  eyeColor               String?
+  distinguishingFeatures String?
+  appearanceDesc         String?
+  personalityType        String?
+  coreTraits             String   @default("[]")
+  virtues                String   @default("[]")
+  flaws                  String   @default("[]")
+  moralAlignment         String?
+  childhood              String?
+  familyBackground       String?
+  traumas                String   @default("[]")
+  secrets                String?
+  speechDialect          String?
+  catchphrases           String   @default("[]")
+  nervousHabits          String   @default("[]")
+  hobbies                String   @default("[]")
+  arcType                String?
+  arcStartState          String?
+  arcMidpoint            String?
+  arcEndState            String?
+  developmentStatus      String   @default("CONCEPT")
+  roleInStory            String?
+  tags                   String   @default("[]")
+  groups                 String   @default("[]")
+  importance             Int      @default(1)
+  sortOrder              Int      @default(0)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  povChapters        Chapter[]               @relation("POVChapters")
+  povScenes          Scene[]                 @relation("POVScenes")
+  sceneAppearances   SceneCharacter[]
+  relationshipsFrom  CharacterRelationship[] @relation("FromCharacter")
+  relationshipsTo    CharacterRelationship[] @relation("ToCharacter")
+  factionMemberships FactionMember[]
+  ownedItems         Item[]                  @relation("ItemOwner")
+  skills             CharacterSkill[]
+  goals              CharacterGoal[]
+  foundedFactions    Faction[]               @relation("FoundedFactions")
+  ledFactions        Faction[]               @relation("LedFactions")
+  outlineBeats       OutlineBeatCharacter[]
+}
+
+model CharacterSkill {
+  id          String    @id @default(uuid())
+  characterId String
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  name        String
+  category    String
+  proficiency Int       @default(1)
+  acquired    String?
+  notes       String?
+}
+
+model CharacterGoal {
+  id          String    @id @default(uuid())
+  characterId String
+  character   Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  description String
+  type        String    @default("SHORT_TERM")
+  priority    Int       @default(1)
+  origin      String?
+  obstacle    String?
+  endState    String?
+  status      String    @default("NOT_STARTED")
+}
+
+model CharacterRelationship {
+  id           String   @id @default(uuid())
+  projectId    String
+  characterAId String
+  characterA   Character @relation("FromCharacter", fields: [characterAId], references: [id], onDelete: Cascade)
+  characterBId String
+  characterB   Character @relation("ToCharacter", fields: [characterBId], references: [id], onDelete: Cascade)
+  type         String
+  subType      String?
+  direction    String   @default("MUTUAL")
+  intensity    Int      @default(5)
+  status       String   @default("CURRENT")
+  startEvent   String?
+  endEvent     String?
+  howMet       String?
+  publicView   String?
+  reality      String?
+  description  String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([characterAId, characterBId, type])
+}
+
+// ==================== 世界观 - 地点 ====================
+
+model Location {
+  id                   String   @id @default(uuid())
+  projectId            String
+  project              Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parentId             String?
+  parent               Location? @relation("LocationHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children             Location[] @relation("LocationHierarchy")
+  name                 String
+  type                 String
+  description          String?
+  climate              String?
+  currentStatus        String   @default("THRIVING")
+  controllingFactionId String?
+  controllingFaction   Faction? @relation("LocationFaction", fields: [controllingFactionId], references: [id], onDelete: SetNull)
+  imageUrls            String   @default("[]")
+  sortOrder            Int      @default(0)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  notableResidents Character[] @relation("CharacterResidence")
+  birthPlaceChars  Character[] @relation("CharacterBirthPlace")
+  scenes           Scene[]
+  factionHQ        Faction[]  @relation("FactionHQ")
+  itemOrigins      Item[]     @relation("ItemOrigin")
+  timelineEvents   TimelineEvent[]
+}
+
+// ==================== 世界观 - 势力 ====================
+
+model Faction {
+  id              String   @id @default(uuid())
+  projectId       String
+  project         Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  parentId        String?
+  parent          Faction? @relation("FactionHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children        Faction[] @relation("FactionHierarchy")
+  name            String
+  fullName        String?
+  type            String
+  motto           String?
+  foundedDate     String?
+  founderId       String?
+  founder         Character? @relation("FoundedFactions", fields: [founderId], references: [id], onDelete: SetNull)
+  currentLeaderId String?
+  currentLeader   Character? @relation("LedFactions", fields: [currentLeaderId], references: [id], onDelete: SetNull)
+  headquartersId  String?
+  headquarters    Location?  @relation("FactionHQ", fields: [headquartersId], references: [id], onDelete: SetNull)
+  isPublic        Boolean   @default(true)
+  alignment       String?
+  description     String?
+  sortOrder       Int       @default(0)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  members              FactionMember[]
+  controllingLocations Location[]     @relation("LocationFaction")
+  ownedItems           Item[]         @relation("ItemFaction")
+}
+
+model FactionMember {
+  id           String    @id @default(uuid())
+  factionId    String
+  faction      Faction   @relation(fields: [factionId], references: [id], onDelete: Cascade)
+  characterId  String
+  character    Character @relation(fields: [characterId], references: [id], onDelete: Cascade)
+  rank         String?
+  department   String?
+  joinDate     String?
+  status       String    @default("ACTIVE")
+  loyaltyLevel Int?
+
+  @@unique([factionId, characterId])
+}
+
+// ==================== 世界观 - 物品 ====================
+
+model Item {
+  id                    String    @id @default(uuid())
+  projectId             String
+  project               Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  factionId             String?
+  faction               Faction?  @relation("ItemFaction", fields: [factionId], references: [id], onDelete: SetNull)
+  name                  String
+  aliases               String    @default("[]")
+  type                  String
+  description           String?
+  physicalDesc          String?
+  properties            String?
+  powerLevel            String    @default("COMMON")
+  value                 String?
+  acquisitionMethod     String?
+  acquisitionLocationId String?
+  acquisitionLocation   Location? @relation("ItemOrigin", fields: [acquisitionLocationId], references: [id], onDelete: SetNull)
+  currentOwnerId        String?
+  currentOwner          Character? @relation("ItemOwner", fields: [currentOwnerId], references: [id], onDelete: SetNull)
+  usageConditions       String?
+  history               String?
+  lore                  String?
+  imageUrls             String    @default("[]")
+  isKeyItem             Boolean   @default(false)
+  sortOrder             Int       @default(0)
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+}
+
+// ==================== 时间线 ====================
+
+model Timeline {
+  id                String   @id @default(uuid())
+  projectId         String
+  project           Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name              String
+  description       String?
+  narrativeFunction String?
+  relationship      String?
+  createdAt         DateTime @default(now())
+
+  events TimelineEvent[]
+}
+
+model TimelineEvent {
+  id              String          @id @default(uuid())
+  timelineId      String
+  timeline        Timeline        @relation(fields: [timelineId], references: [id], onDelete: Cascade)
+  projectId       String
+  project         Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title           String
+  description     String?
+  date            String?
+  approximateDate String?
+  relativeDate    String?
+  duration        String?
+  eventType       String
+  importance      Int             @default(3)
+  status          String          @default("PLANNED")
+  locationId      String?
+  location        Location?       @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  causeEventId    String?
+  causeEvent      TimelineEvent?  @relation("CauseEffect", fields: [causeEventId], references: [id], onDelete: SetNull)
+  effectEvents    TimelineEvent[] @relation("CauseEffect")
+  sortOrder       Int             @default(0)
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  chapters             TimelineEventChapter[]
+  relatedForeshadowings Foreshadowing[]
+  scenes               Scene[]
+}
+
+model TimelineEventChapter {
+  id        String        @id @default(uuid())
+  eventId   String
+  event     TimelineEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  chapterId String
+  chapter   Chapter       @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, chapterId])
+}
+
+// ==================== 伏笔 ====================
+
+model Foreshadowing {
+  id                    String        @id @default(uuid())
+  projectId             String
+  project               Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title                 String
+  description           String?
+  type                  String
+  scope                 String        @default("BOOK_LEVEL")
+  plantingMethod        String?
+  plantedChapterId      String?
+  plantedChapter        Chapter?      @relation("PlantedIn", fields: [plantedChapterId], references: [id], onDelete: SetNull)
+  revealedChapterId     String?
+  revealedChapter       Chapter?      @relation("RevealedIn", fields: [revealedChapterId], references: [id], onDelete: SetNull)
+  status                String        @default("PLANTED")
+  importance            Int           @default(3)
+  targetAwareness       String        @default("SHARP_READERS")
+  relatedEventId        String?
+  relatedEvent          TimelineEvent? @relation(fields: [relatedEventId], references: [id], onDelete: SetNull)
+  parentForeshadowingId  String?
+  parentForeshadowing    Foreshadowing? @relation("ClueChain", fields: [parentForeshadowingId], references: [id], onDelete: SetNull)
+  childForeshadowings    Foreshadowing[] @relation("ClueChain")
+  sortOrder              Int           @default(0)
+  createdAt              DateTime      @default(now())
+  updatedAt              DateTime      @updatedAt
+}
+
+// ==================== 灵感 ====================
+
+model Inspiration {
+  id                 String   @id @default(uuid())
+  projectId          String
+  project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title              String?
+  content            String
+  sourceType         String
+  sourceDetail       String?
+  tags               String   @default("[]")
+  status             String   @default("RAW")
+  priority           Int      @default(3)
+  relatedModule      String?
+  folder             String?
+  promotedEntityType String?
+  promotedEntityId   String?
+  attachmentUrls     String   @default("[]")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
+
+// ==================== 每日数据 ====================
+
+model DailyStats {
+  id             String   @id @default(uuid())
+  projectId      String
+  project        Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  date           DateTime
+  totalWords     Int      @default(0)
+  netWords       Int      @default(0)
+  writingTimeSec Int      @default(0)
+  goalWords      Int?
+  goalMet        Boolean  @default(false)
+
+  @@unique([projectId, date])
+}
+
+model WritingSession {
+  id           String    @id @default(uuid())
+  projectId    String
+  project      Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  startTime    DateTime
+  endTime      DateTime?
+  durationSec  Int?
+  wordsWritten Int?
+  wpm          Float?
+  chapterId    String?
+  chapter      Chapter?  @relation(fields: [chapterId], references: [id], onDelete: SetNull)
+  notes        String?
+}
+
+// ==================== 搜索索引 ====================
+
+model SearchIndex {
+  id         String  @id @default(uuid())
+  projectId  String
+  project    Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  entityType String
+  entityId   String
+  title      String
+  content    String
+}

@@ -1,0 +1,102 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ===== 主题: 墨 (默认深色护眼) ===== */
+:root {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #242424;
+  --bg-editor: #1e1e1e;
+  --text-primary: #d4c5a9;
+  --text-secondary: #8a8078;
+  --accent: #c8966c;
+  --accent-hover: #d4a87c;
+  --border: #333333;
+  --surface: #2a2a2a;
+  --font-ui: "Inter", "思源黑体", "Source Han Sans SC", sans-serif;
+  --font-editor: "思源宋体", "Source Han Serif SC", "Georgia", serif;
+  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+}
+
+/* ===== 主题: 纸 ===== */
+.theme-paper {
+  --bg-primary: #f5f0e8;
+  --bg-secondary: #ede6d8;
+  --bg-editor: #fafaf7;
+  --text-primary: #2c2416;
+  --text-secondary: #7a7265;
+  --accent: #8b6f47;
+  --accent-hover: #a0845c;
+  --border: #d4cbc0;
+  --surface: #ffffff;
+}
+
+/* ===== 主题: 夜 ===== */
+.theme-night {
+  --bg-primary: #000000;
+  --bg-secondary: #0a0a0a;
+  --bg-editor: #000000;
+  --text-primary: #b8b8b8;
+  --text-secondary: #666666;
+  --accent: #6a8caf;
+  --accent-hover: #7da3c7;
+  --border: #1a1a1a;
+  --surface: #0d0d0d;
+}
+
+/* ===== 主题: 森 ===== */
+.theme-forest {
+  --bg-primary: #1b2d1e;
+  --bg-secondary: #223628;
+  --bg-editor: #1a2a1c;
+  --text-primary: #c8d6c0;
+  --text-secondary: #8a9a82;
+  --accent: #7ba870;
+  --accent-hover: #92c085;
+  --border: #2a3d2c;
+  --surface: #25382a;
+}
+
+/* 全局基础 */
+*, *::before, *::after { box-sizing: border-box; }
+html, body, #root { height: 100%; overflow: hidden; }
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-ui);
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 滚动条 */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
+
+/* TipTap 编辑器 */
+.tiptap-editor {
+  font-family: var(--font-editor);
+  font-size: 16px;
+  line-height: 1.8;
+  color: var(--text-primary);
+  outline: none;
+  min-height: 100%;
+  padding: 2rem 3rem;
+}
+.tiptap-editor p { margin-bottom: 0.5em; }
+.tiptap-editor h1 { font-size: 2em; margin: 1em 0 0.5em; }
+.tiptap-editor h2 { font-size: 1.5em; margin: 0.8em 0 0.4em; }
+.tiptap-editor h3 { font-size: 1.2em; margin: 0.6em 0 0.3em; }
+.tiptap-editor blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 1em;
+  margin: 1em 0;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+.tiptap-editor ul, .tiptap-editor ol { padding-left: 1.5em; margin: 0.5em 0; }
+.tiptap-editor hr { border: none; border-top: 1px solid var(--border); margin: 2em 0; }
+
+::selection { background: var(--accent); color: var(--bg-primary); }
