@@ -13,6 +13,7 @@ import characterRoutes from "./modules/character/character.routes";
 import * as characterController from "./modules/character/character.controller";
 import worldRoutes from "./modules/world/world.routes";
 import * as worldController from "./modules/world/world.controller";
+import searchRoutes from "./modules/search/search.routes";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -53,6 +54,8 @@ app.patch("/api/v1/factions/:id", authenticate, worldController.factionUpdate);
 app.delete("/api/v1/factions/:id", authenticate, worldController.factionRemove);
 app.patch("/api/v1/items/:id", authenticate, worldController.itemUpdate);
 app.delete("/api/v1/items/:id", authenticate, worldController.itemRemove);
+// 搜索
+app.use("/api/v1/search", searchRoutes);
 
 // 全局错误处理
 app.use((_err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
