@@ -20,7 +20,7 @@ export async function list(req: Request, res: Response, next: NextFunction) {
 
 export async function create(req: Request, res: Response, next: NextFunction) {
   try {
-    const input = createCharacterSchema.parse(req.body);
+    const input = createCharacterSchema.parse({ ...req.body, projectId: req.params.projectId });
     const data = await characterService.create(uid(req), input);
     res.status(201).json({ success: true, data });
   } catch (err: any) {
