@@ -11,6 +11,8 @@ import outlineRoutes from "./modules/outline/outline.routes";
 import * as outlineController from "./modules/outline/outline.controller";
 import characterRoutes from "./modules/character/character.routes";
 import * as characterController from "./modules/character/character.controller";
+import worldRoutes from "./modules/world/world.routes";
+import * as worldController from "./modules/world/world.controller";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -43,6 +45,14 @@ app.use("/api/v1/projects/:projectId/characters", characterRoutes);
 app.get("/api/v1/characters/:id", authenticate, characterController.getById);
 app.patch("/api/v1/characters/:id", authenticate, characterController.update);
 app.delete("/api/v1/characters/:id", authenticate, characterController.remove);
+// 世界观路由
+app.use("/api/v1/projects/:projectId/world", worldRoutes);
+app.patch("/api/v1/locations/:id", authenticate, worldController.update);
+app.delete("/api/v1/locations/:id", authenticate, worldController.remove);
+app.patch("/api/v1/factions/:id", authenticate, worldController.factionUpdate);
+app.delete("/api/v1/factions/:id", authenticate, worldController.factionRemove);
+app.patch("/api/v1/items/:id", authenticate, worldController.itemUpdate);
+app.delete("/api/v1/items/:id", authenticate, worldController.itemRemove);
 
 // 全局错误处理
 app.use((_err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
