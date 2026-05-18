@@ -7,6 +7,8 @@ import volumeRoutes from "./modules/volume/volume.routes";
 import * as volumeController from "./modules/volume/volume.controller";
 import chapterRoutes from "./modules/chapter/chapter.routes";
 import * as chapterController from "./modules/chapter/chapter.controller";
+import outlineRoutes from "./modules/outline/outline.routes";
+import * as outlineController from "./modules/outline/outline.controller";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,6 +32,10 @@ app.delete("/api/v1/volumes/:id", authenticate, volumeController.remove);
 app.get("/api/v1/chapters/:id", authenticate, chapterController.getById);
 app.patch("/api/v1/chapters/:id", authenticate, chapterController.update);
 app.delete("/api/v1/chapters/:id", authenticate, chapterController.remove);
+// 大纲路由
+app.use("/api/v1/projects/:projectId/outline", outlineRoutes);
+app.patch("/api/v1/outline/:id", authenticate, outlineController.update);
+app.delete("/api/v1/outline/:id", authenticate, outlineController.remove);
 
 // 全局错误处理
 app.use((_err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
