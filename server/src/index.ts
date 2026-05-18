@@ -9,6 +9,8 @@ import chapterRoutes from "./modules/chapter/chapter.routes";
 import * as chapterController from "./modules/chapter/chapter.controller";
 import outlineRoutes from "./modules/outline/outline.routes";
 import * as outlineController from "./modules/outline/outline.controller";
+import characterRoutes from "./modules/character/character.routes";
+import * as characterController from "./modules/character/character.controller";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -36,6 +38,11 @@ app.delete("/api/v1/chapters/:id", authenticate, chapterController.remove);
 app.use("/api/v1/projects/:projectId/outline", outlineRoutes);
 app.patch("/api/v1/outline/:id", authenticate, outlineController.update);
 app.delete("/api/v1/outline/:id", authenticate, outlineController.remove);
+// 人物路由
+app.use("/api/v1/projects/:projectId/characters", characterRoutes);
+app.get("/api/v1/characters/:id", authenticate, characterController.getById);
+app.patch("/api/v1/characters/:id", authenticate, characterController.update);
+app.delete("/api/v1/characters/:id", authenticate, characterController.remove);
 
 // 全局错误处理
 app.use((_err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
