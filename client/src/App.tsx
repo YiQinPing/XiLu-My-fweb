@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { useThemeStore } from "@/stores/theme";
+import { useAuthStore } from "@/stores/auth";
+import { AuthGuard } from "@/components/layout/AuthGuard";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Dashboard } from "@/pages/Dashboard";
 import { Write } from "@/pages/Write";
@@ -15,6 +17,7 @@ import { Inspiration } from "@/pages/Inspiration";
 import { Stats } from "@/pages/Stats";
 import { Search } from "@/pages/Search";
 import { Login } from "@/pages/Login";
+import { Register } from "@/pages/Register";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -22,12 +25,14 @@ const queryClient = new QueryClient({
   },
 });
 
-function ThemeInitializer({ children }: { children: React.ReactNode }) {
+function AppInitializer({ children }: { children: React.ReactNode }) {
   const setTheme = useThemeStore((s) => s.setTheme);
   const theme = useThemeStore((s) => s.theme);
+  const checkAuth = useAuthStore((s) => s.checkAuth);
 
   useEffect(() => {
     setTheme(theme);
+    checkAuth();
   }, []);
 
   return <>{children}</>;
@@ -36,11 +41,19 @@ function ThemeInitializer({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <ThemeInitializer>
+      <AppInitializer>
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
-            <Route path="/" element={<AppLayout />}>
+            <Route path="/register" element={<Register />} />
+            <Route
+              path="/"
+              element={
+                <AuthGuard>
+                  <AppLayout />
+                </AuthGuard>
+              }
+            >
               <Route index element={<Dashboard />} />
               <Route path="write" element={<Write />} />
               <Route path="outline" element={<Outline />} />
@@ -56,7 +69,7 @@ export default function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </BrowserRouter>
-      </ThemeInitializer>
+      </AppInitializer>
     </QueryClientProvider>
   );
 }
