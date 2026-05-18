@@ -18,6 +18,8 @@ import relationshipRoutes from "./modules/relationship/relationship.routes";
 import * as relationshipController from "./modules/relationship/relationship.controller";
 import timelineRoutes from "./modules/timeline/timeline.routes";
 import * as timelineController from "./modules/timeline/timeline.controller";
+import foreshadowingRoutes from "./modules/foreshadowing/foreshadowing.routes";
+import * as foreshadowingController from "./modules/foreshadowing/foreshadowing.controller";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -70,6 +72,11 @@ app.patch("/api/v1/timelines/:id", authenticate, timelineController.updateTimeli
 app.delete("/api/v1/timelines/:id", authenticate, timelineController.removeTimeline);
 app.patch("/api/v1/timeline-events/:id", authenticate, timelineController.updateEvent);
 app.delete("/api/v1/timeline-events/:id", authenticate, timelineController.removeEvent);
+
+// 伏笔
+app.use("/api/v1/projects/:projectId/foreshadowings", foreshadowingRoutes);
+app.patch("/api/v1/foreshadowings/:id", authenticate, foreshadowingController.update);
+app.delete("/api/v1/foreshadowings/:id", authenticate, foreshadowingController.remove);
 
 // 全局错误处理
 app.use((_err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
