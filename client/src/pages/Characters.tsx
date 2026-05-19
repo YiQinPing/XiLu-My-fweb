@@ -6,6 +6,7 @@ import {
   listCharacters, createCharacter, getCharacter, updateCharacter, deleteCharacter,
   type CharacterBrief, type CharacterDetail,
 } from "@/api/character";
+import { ProjectSelector } from "@/components/shared/ProjectSelector";
 
 type Section = "basic" | "appearance" | "personality" | "background" | "speech" | "arc" | "meta";
 
@@ -290,12 +291,9 @@ export function Characters() {
       <div className="flex h-full flex-col items-center justify-center gap-4" style={{ backgroundColor: "var(--bg-primary)" }}>
         <Users size={48} style={{ color: "var(--text-secondary)", opacity: 0.4 }} />
         <p className="text-sm" style={{ color: "var(--text-secondary)" }}>选择一个作品以查看人物</p>
-        <select value="" onChange={(e) => setSearchParams({ project: e.target.value })}
+        <ProjectSelector value="" onChange={(id) => setSearchParams({ project: id })}
           className="rounded-md px-3 py-2 text-sm outline-none"
-          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}>
-          <option value="" disabled>选择作品...</option>
-          {projects.map((p) => (<option key={p.id} value={p.id}>{p.title}</option>))}
-        </select>
+          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
       </div>
     );
   }

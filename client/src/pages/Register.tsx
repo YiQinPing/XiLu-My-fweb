@@ -20,7 +20,7 @@ export function Register() {
     setLoading(true);
     try {
       await register(email, password, displayName);
-      navigate("/");
+      navigate("/?create=1");
     } catch (err: any) {
       setError(err.response?.data?.error?.message || "注册失败，请重试");
     } finally {

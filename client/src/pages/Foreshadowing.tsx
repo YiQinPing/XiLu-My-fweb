@@ -6,6 +6,7 @@ import {
   type ForeshadowingData,
 } from "@/api/foreshadowing";
 import { listProjects, type Project } from "@/api/project";
+import { ProjectSelector } from "@/components/shared/ProjectSelector";
 
 const TYPE_LABELS: Record<string, string> = {
   DETAIL: "细节", DIALOGUE: "对话", ACTION: "行为", SETTING: "场景", CHARACTER_TRAIT: "人物特征", SYMBOL: "象征",
@@ -82,12 +83,9 @@ export function Foreshadowing() {
       <div className="flex h-full flex-col items-center justify-center gap-4" style={{ backgroundColor: "var(--bg-primary)" }}>
         <Lightbulb size={48} style={{ color: "var(--text-secondary)", opacity: 0.4 }} />
         <p className="text-sm" style={{ color: "var(--text-secondary)" }}>选择一个作品以查看伏笔</p>
-        <select value="" onChange={(e) => setSearchParams({ project: e.target.value })}
+        <ProjectSelector value="" onChange={(id) => setSearchParams({ project: id })}
           className="rounded-md px-3 py-2 text-sm outline-none"
-          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}>
-          <option value="" disabled>选择作品...</option>
-          {projects.map((p) => (<option key={p.id} value={p.id}>{p.title}</option>))}
-        </select>
+          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
       </div>
     );
   }
@@ -99,11 +97,9 @@ export function Foreshadowing() {
         <h1 className="text-2xl font-light flex-1" style={{ color: "var(--text-primary)" }}>
           {projects.find((p) => p.id === projectId)?.title} · 伏笔设计
         </h1>
-        <select value={projectId} onChange={(e) => setSearchParams({ project: e.target.value })}
+        <ProjectSelector value={projectId} onChange={(id) => setSearchParams({ project: id })}
           className="rounded-md px-3 py-1.5 text-xs outline-none"
-          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}>
-          {projects.map((p) => (<option key={p.id} value={p.id}>{p.title}</option>))}
-        </select>
+          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
         <button onClick={() => setShowCreate(true)}
           className="flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all hover:scale-105"
           style={{ backgroundColor: "var(--accent)", color: "#fff" }}>

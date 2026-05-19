@@ -8,7 +8,7 @@ import "@xyflow/react/dist/style.css";
 import { Plus, Trash2, Users, X } from "lucide-react";
 import { listRelationships, createRelationship, deleteRelationship, type RelationData } from "@/api/relationship";
 import { listCharacters, type CharacterBrief } from "@/api/character";
-import { listProjects, type Project } from "@/api/project";
+import { ProjectSelector } from "@/components/shared/ProjectSelector";
 
 const RELATION_TYPES = [
   { value: "家人", label: "家人", color: "#4ecdc4" },
@@ -77,8 +77,7 @@ function buildGraph(rels: RelationData[], onDelete: (id: string, label: string) 
 export function Relationships() {
   const [searchParams, setSearchParams] = useSearchParams();
   const projectId = searchParams.get("project") || "";
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [rels, setRels] = useState<RelationData[]>([]);
+const [rels, setRels] = useState<RelationData[]>([]);
   const [loading, setLoading] = useState(false);
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
@@ -88,9 +87,7 @@ export function Relationships() {
   const [characters, setCharacters] = useState<CharacterBrief[]>([]);
   const [form, setForm] = useState({ characterAId: "", characterBId: "", type: "友情", subType: "", intensity: 5, description: "" });
 
-  useEffect(() => { listProjects().then(setProjects).catch(() => {}); }, []);
-
-  const refresh = useCallback(async () => {
+const refresh = useCallback(async () => {
     if (!projectId) return;
     setLoading(true);
     try {
@@ -147,12 +144,9 @@ export function Relationships() {
       <div className="flex h-full flex-col items-center justify-center gap-4" style={{ backgroundColor: "var(--bg-primary)" }}>
         <Users size={48} style={{ color: "var(--text-secondary)", opacity: 0.4 }} />
         <p className="text-sm" style={{ color: "var(--text-secondary)" }}>选择一个作品以查看人物关系</p>
-        <select value="" onChange={(e) => setSearchParams({ project: e.target.value })}
+        <ProjectSelector value="" onChange={(id) => setSearchParams({ project: id })}
           className="rounded-md px-3 py-2 text-sm outline-none"
-          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}>
-          <option value="" disabled>选择作品...</option>
-          {projects.map((p) => (<option key={p.id} value={p.id}>{p.title}</option>))}
-        </select>
+          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
       </div>
     );
   }
@@ -201,11 +195,9 @@ export function Relationships() {
         <div className="absolute top-4 left-4 right-4 flex items-center gap-3 z-10">
           <h1 className="text-lg font-light" style={{ color: "var(--text-primary)" }}>人物关系图</h1>
           <div className="flex-1" />
-          <select value={projectId} onChange={(e) => setSearchParams({ project: e.target.value })}
+          <ProjectSelector value={projectId} onChange={(id) => setSearchParams({ project: id })}
             className="rounded-md px-3 py-1.5 text-xs outline-none"
-            style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}>
-            {projects.map((p) => (<option key={p.id} value={p.id}>{p.title}</option>))}
-          </select>
+            style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
           {rels.length > 0 && (
             <button onClick={async () => { await loadCharacters(); setShowCreate(true); }}
               className="flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all hover:scale-105"

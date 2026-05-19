@@ -7,6 +7,7 @@ import {
   type TimelineData, type TimelineEventData,
 } from "@/api/timeline";
 import { listProjects, type Project } from "@/api/project";
+import { ProjectSelector } from "@/components/shared/ProjectSelector";
 
 const STATUS_COLORS: Record<string, string> = {
   PLANNED: "#4a9eff",
@@ -82,12 +83,9 @@ export function Timeline() {
       <div className="flex h-full flex-col items-center justify-center gap-4" style={{ backgroundColor: "var(--bg-primary)" }}>
         <Clock size={48} style={{ color: "var(--text-secondary)", opacity: 0.4 }} />
         <p className="text-sm" style={{ color: "var(--text-secondary)" }}>选择一个作品以查看时间线</p>
-        <select value="" onChange={(e) => setSearchParams({ project: e.target.value })}
+        <ProjectSelector value="" onChange={(id) => setSearchParams({ project: id })}
           className="rounded-md px-3 py-2 text-sm outline-none"
-          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}>
-          <option value="" disabled>选择作品...</option>
-          {projects.map((p) => (<option key={p.id} value={p.id}>{p.title}</option>))}
-        </select>
+          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
       </div>
     );
   }
@@ -144,11 +142,9 @@ export function Timeline() {
           <h1 className="text-lg font-light flex-1" style={{ color: "var(--text-primary)" }}>
             {projects.find((p) => p.id === projectId)?.title} · {timelines.find((t) => t.id === selectedTl)?.name || "时间线"}
           </h1>
-          <select value={projectId} onChange={(e) => setSearchParams({ project: e.target.value })}
+          <ProjectSelector value={projectId} onChange={(id) => setSearchParams({ project: id })}
             className="rounded-md px-3 py-1.5 text-xs outline-none"
-            style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}>
-            {projects.map((p) => (<option key={p.id} value={p.id}>{p.title}</option>))}
-          </select>
+            style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
           {selectedTl && (
             <button onClick={() => setShowNewEv(true)}
               className="flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all hover:scale-105"

@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { Plus, Trash2, ChevronRight, ChevronDown, FileText, BookOpen, Edit3, X } from "lucide-react";
 import { listProjects, type Project } from "@/api/project";
 import { listOutline, createOutlineBeat, updateOutlineBeat, deleteOutlineBeat, applyTemplate, structureTemplates, type OutlineBeat, type BeatType } from "@/api/outline";
+import { ProjectSelector } from "@/components/shared/ProjectSelector";
 
 const beatTypeLabels: Record<BeatType, string> = { ACT: "幕", SEQUENCE: "序列", SCENE: "场景", BEAT: "节拍" };
 
@@ -213,17 +214,12 @@ export function Outline() {
       <div className="flex h-full flex-col items-center justify-center gap-4" style={{ backgroundColor: "var(--bg-primary)" }}>
         <BookOpen size={48} style={{ color: "var(--text-secondary)", opacity: 0.4 }} />
         <p className="text-sm" style={{ color: "var(--text-secondary)" }}>选择一个作品以查看大纲</p>
-        <select
+        <ProjectSelector
           value=""
-          onChange={(e) => setSearchParams({ project: e.target.value })}
+          onChange={(id) => setSearchParams({ project: id })}
           className="rounded-md px-3 py-2 text-sm outline-none"
           style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
-        >
-          <option value="" disabled>选择作品...</option>
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>{p.title}</option>
-          ))}
-        </select>
+        />
       </div>
     );
   }
@@ -240,16 +236,12 @@ export function Outline() {
           </h1>
         </div>
 
-        <select
+        <ProjectSelector
           value={projectId}
-          onChange={(e) => setSearchParams({ project: e.target.value })}
+          onChange={(id) => setSearchParams({ project: id })}
           className="rounded-md px-3 py-1.5 text-xs outline-none"
           style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
-        >
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>{p.title}</option>
-          ))}
-        </select>
+        />
 
         <button
           onClick={() => setShowTemplate(!showTemplate)}

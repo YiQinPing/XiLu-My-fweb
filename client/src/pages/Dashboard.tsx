@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Plus, BookOpen, MoreHorizontal, Edit3, Trash2 } from "lucide-react";
 import { listProjects, createProject, deleteProject, type Project } from "@/api/project";
 
@@ -11,6 +11,7 @@ const stageLabels: Record<string, string> = {
 };
 
 export function Dashboard() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -32,6 +33,10 @@ export function Dashboard() {
 
   useEffect(() => {
     fetchProjects();
+    if (searchParams.get("create") === "1") {
+      setShowCreate(true);
+      setSearchParams({}, { replace: true });
+    }
   }, []);
 
   const handleCreate = async () => {

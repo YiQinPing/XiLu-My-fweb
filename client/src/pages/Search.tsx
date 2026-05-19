@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Search as SearchIcon, FileText, Users, MapPin, Building2, Package, ListTree } from "lucide-react";
 import { search, type SearchResult } from "@/api/search";
-import { listProjects, type Project } from "@/api/project";
+import { ProjectSelector } from "@/components/shared/ProjectSelector";
 
 const typeCfg: Record<string, { icon: React.ComponentType<{ size?: number }>; label: string; color: string }> = {
   chapter:    { icon: FileText,   label: "章节", color: "#4a9eff" },
@@ -19,11 +19,7 @@ export function Search() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
-  const [projects, setProjects] = useState<Project[]>([]);
-
-  useEffect(() => { listProjects().then(setProjects).catch(() => {}); }, []);
-
-  const doSearch = useCallback(async (q: string, pid: string) => {
+const doSearch = useCallback(async (q: string, pid: string) => {
     if (!q.trim() || !pid) { setResults([]); return; }
     setLoading(true);
     try { setResults(await search(pid, q.trim())); }
@@ -41,12 +37,9 @@ export function Search() {
       <div className="flex h-full flex-col items-center justify-center gap-4" style={{ backgroundColor: "var(--bg-primary)" }}>
         <SearchIcon size={48} style={{ color: "var(--text-secondary)", opacity: 0.4 }} />
         <p className="text-sm" style={{ color: "var(--text-secondary)" }}>选择一个作品以搜索</p>
-        <select value="" onChange={(e) => setSearchParams({ project: e.target.value })}
+        <ProjectSelector value="" onChange={(id) => setSearchParams({ project: id })}
           className="rounded-md px-3 py-2 text-sm outline-none"
-          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}>
-          <option value="" disabled>选择作品...</option>
-          {projects.map((p) => (<option key={p.id} value={p.id}>{p.title}</option>))}
-        </select>
+          style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
       </div>
     );
   }
@@ -74,11 +67,9 @@ export function Search() {
               style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}
             />
           </div>
-          <select value={projectId} onChange={(e) => setSearchParams({ project: e.target.value })}
+          <ProjectSelector value={projectId} onChange={(id) => setSearchParams({ project: id })}
             className="rounded-md px-3 py-2 text-xs outline-none"
-            style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }}>
-            {projects.map((p) => (<option key={p.id} value={p.id}>{p.title}</option>))}
-          </select>
+            style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
         </div>
       </div>
 

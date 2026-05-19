@@ -11,6 +11,8 @@ import {
   BarChart3,
   Search,
   LogOut,
+  Home,
+  Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
@@ -46,6 +48,22 @@ export function Sidebar() {
       <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-md text-lg font-bold" style={{ color: "var(--accent)" }}>
         希
       </div>
+
+      {/* 首页 */}
+      <NavLink
+        to="/"
+        className={({ isActive }) =>
+          cn(
+            "flex h-10 w-10 items-center justify-center rounded-md transition-colors mb-1",
+            isActive
+              ? "text-[var(--accent)]"
+              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+          )
+        }
+        title="首页"
+      >
+        <Home size={20} />
+      </NavLink>
 
       {/* 导航 */}
       <nav className="flex flex-1 flex-col gap-1">
@@ -105,6 +123,22 @@ export function Sidebar() {
               <div className="px-3 py-1.5 text-xs border-b" style={{ color: "var(--text-secondary)", borderColor: "var(--border)" }}>
                 {user?.displayName}
               </div>
+              <button
+                onClick={() => { setMenuOpen(false); navigate("/"); }}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-xs hover:brightness-110 transition-colors"
+                style={{ color: "var(--text-primary)" }}
+              >
+                <Home size={12} />
+                工作台
+              </button>
+              <button
+                onClick={() => { setMenuOpen(false); navigate("/?create=1"); }}
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-xs hover:brightness-110 transition-colors"
+                style={{ color: "var(--accent)" }}
+              >
+                <Plus size={12} />
+                新建作品
+              </button>
               <ThemeSwitcher />
               <button
                 onClick={handleLogout}
