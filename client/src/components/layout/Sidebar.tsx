@@ -9,6 +9,7 @@ import {
   Clock,
   Lightbulb,
   BarChart3,
+  Sparkles,
   Search,
   LogOut,
   Home,
@@ -27,6 +28,7 @@ const navItems = [
   { to: "/relationships", icon: GitGraph, label: "关系图" },
   { to: "/foreshadowing", icon: Eye, label: "伏笔" },
   { to: "/timeline", icon: Clock, label: "时间线" },
+  { to: "/ai", icon: Sparkles, label: "AI助手" },
   { to: "/inspiration", icon: Lightbulb, label: "灵感" },
   { to: "/stats", icon: BarChart3, label: "数据" },
 ];

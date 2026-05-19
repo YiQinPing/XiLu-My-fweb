@@ -17,6 +17,7 @@ import { Timeline } from "@/pages/Timeline";
 import { Inspiration } from "@/pages/Inspiration";
 import { Stats } from "@/pages/Stats";
 import { Search } from "@/pages/Search";
+import { AiAssistant } from "@/pages/AiAssistant";
 import { Login } from "@/pages/Login";
 import { Register } from "@/pages/Register";
 
@@ -67,6 +68,7 @@ export default function App() {
               <Route path="inspiration" element={<Inspiration />} />
               <Route path="stats" element={<Stats />} />
               <Route path="search" element={<Search />} />
+              <Route path="ai" element={<AiAssistant />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
