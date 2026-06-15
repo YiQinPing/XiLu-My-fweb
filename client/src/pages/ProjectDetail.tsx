@@ -86,7 +86,7 @@ export function ProjectDetail() {
   };
 
   return (
-    <div className="flex h-full flex-col" style={{ backgroundColor: "var(--bg-primary)" }}>
+    <div className="flex h-full flex-col">
       {/* 顶部栏 */}
       <div className="flex items-center gap-4 px-8 py-6">
         <button
@@ -131,7 +131,7 @@ export function ProjectDetail() {
             <div
               key={stat.label}
               className="rounded-lg p-4 text-center"
-              style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
+              style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}
             >
               <div className="text-2xl font-medium" style={{ color: "var(--accent)" }}>{stat.value}</div>
               <div className="mt-1 text-xs" style={{ color: "var(--text-secondary)" }}>{stat.label}</div>
@@ -153,7 +153,7 @@ export function ProjectDetail() {
         </div>
 
         {project.volumes.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg py-16" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+          <div className="flex flex-col items-center justify-center rounded-lg py-16" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
             <BookOpen size={40} style={{ color: "var(--text-secondary)", opacity: 0.3 }} />
             <p className="mt-3 text-sm" style={{ color: "var(--text-secondary)" }}>还没有卷，点击上方按钮创建</p>
           </div>
@@ -163,7 +163,7 @@ export function ProjectDetail() {
               <div
                 key={volume.id}
                 className="rounded-lg overflow-hidden animate-fade-in"
-                style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
+                style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}
               >
                 <div className="flex items-center gap-3 px-5 py-3">
                   <ChevronRight size={14} style={{ color: "var(--text-secondary)" }} />
@@ -196,7 +196,7 @@ export function ProjectDetail() {
                 </div>
 
                 {volume.chapters.length > 0 && (
-                  <div style={{ borderTop: "1px solid var(--border)" }}>
+                  <div style={{ borderTop: "1px solid var(--glass-border)" }}>
                     {volume.chapters.map((ch) => (
                       <button
                         key={ch.id}
@@ -226,7 +226,7 @@ export function ProjectDetail() {
         <>
           <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setShowVolumeCreate(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="w-full max-w-sm rounded-lg p-6 animate-fade-in" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div className="w-full max-w-sm rounded-lg p-6 animate-fade-in" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
               <h2 className="text-lg font-light" style={{ color: "var(--text-primary)" }}>新建卷</h2>
               <input
                 autoFocus

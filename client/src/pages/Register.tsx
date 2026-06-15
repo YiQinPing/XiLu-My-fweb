@@ -30,7 +30,7 @@ export function Register() {
 
   return (
     <div className="flex h-full items-center justify-center" style={{ backgroundColor: "var(--bg-primary)" }}>
-      <div className="w-full max-w-sm rounded-lg p-8 animate-fade-in" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+      <div className="w-full max-w-sm rounded-lg p-8 animate-fade-in" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
         <h1 className="mb-2 text-center text-2xl font-light">创建账号</h1>
         <p className="mb-6 text-center text-sm" style={{ color: "var(--text-secondary)" }}>开始你的写作之旅</p>
 

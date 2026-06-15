@@ -4,6 +4,7 @@ import { Lightbulb, Plus, Trash2, Edit3, Shuffle, ChevronUp, Filter, X, Sparkles
 import { ProjectSelector } from "@/components/shared/ProjectSelector";
 import * as inspirationApi from "@/api/inspiration";
 import type { InspirationData, CreateInspirationInput } from "@/api/inspiration";
+import { useProjectStore } from "@/stores/project";
 
 const sourceLabels: Record<string, string> = {
   DREAM: "梦", READING: "阅读", CONVERSATION: "对话", OBSERVATION: "观察",
@@ -23,7 +24,8 @@ const priorityLabels = ["", "很低", "低", "中", "高", "很重要"];
 
 export function Inspiration() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const projectId = searchParams.get("project") || "";
+  const globalProjectId = useProjectStore((s) => s.selectedProjectId);
+  const projectId = globalProjectId || searchParams.get("project") || "";
   const [items, setItems] = useState<InspirationData[]>([]);
   const [loading, setLoading] = useState(false);
   const [randomPrompt, setRandomPrompt] = useState<{ prompt: string; category: string } | null>(null);
@@ -107,7 +109,7 @@ export function Inspiration() {
 
   const handlePromote = async (id: string, target: string) => {
     try {
-      const result = await inspirationApi.promoteInspiration(projectId, id, target);
+      await inspirationApi.promoteInspiration(projectId, id, target);
       setPromoting(null);
       alert(`灵感已提升为${target === "character" ? "人物" : target === "chapter" ? "章节" : target === "outline" ? "大纲" : target === "location" ? "地点" : target === "timeline_event" ? "时间线事件" : "伏笔"}`);
       refresh();
@@ -129,7 +131,7 @@ export function Inspiration() {
 
   if (!projectId) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4" style={{ backgroundColor: "var(--bg-primary)" }}>
+      <div className="flex h-full flex-col items-center justify-center gap-4">
         <Lightbulb size={48} style={{ color: "var(--text-secondary)", opacity: 0.4 }} />
         <p className="text-sm" style={{ color: "var(--text-secondary)" }}>选择一个作品以查看灵感</p>
         <ProjectSelector value="" onChange={(id) => setSearchParams({ project: id })}
@@ -145,7 +147,7 @@ export function Inspiration() {
   };
 
   return (
-    <div className="flex h-full flex-col" style={{ backgroundColor: "var(--bg-primary)" }}>
+    <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex items-center gap-4 px-8 py-6">
         <Lightbulb size={20} style={{ color: "var(--accent)" }} />
@@ -192,7 +194,7 @@ export function Inspiration() {
 
         {/* Random Prompt Display */}
         {randomPrompt && (
-          <div className="rounded-lg p-3 flex items-start gap-3" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+          <div className="rounded-lg p-3 flex items-start gap-3" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
             <Sparkles size={16} style={{ color: "var(--accent)", marginTop: 2, flexShrink: 0 }} />
             <div className="flex-1">
               <p className="text-sm leading-relaxed" style={{ color: "var(--text-primary)" }}>{randomPrompt.prompt}</p>
@@ -253,7 +255,7 @@ export function Inspiration() {
               const st = statusCfg[item.status] || statusCfg.RAW;
               return (
                 <div key={item.id} className="rounded-lg p-4 transition-all hover:scale-[1.01] group"
-                  style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                  style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
                   {/* Header */}
                   <div className="flex items-start justify-between">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -276,7 +278,7 @@ export function Inspiration() {
                           <>
                             <div className="fixed inset-0 z-10" onClick={() => setPromoting(null)} />
                             <div className="absolute right-0 top-5 z-20 w-28 rounded-md py-1 shadow-lg"
-                              style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                              style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
                               {[
                                 { k: "chapter", l: "章节" },
                                 { k: "character", l: "人物" },
@@ -325,7 +327,7 @@ export function Inspiration() {
         <>
           <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setEditing(null)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="w-full max-w-lg rounded-lg p-6 animate-fade-in" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div className="w-full max-w-lg rounded-lg p-6 animate-fade-in" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-light" style={{ color: "var(--text-primary)" }}>编辑灵感</h2>
                 <button onClick={() => setEditing(null)} className="p-1"><X size={16} style={{ color: "var(--text-secondary)" }} /></button>

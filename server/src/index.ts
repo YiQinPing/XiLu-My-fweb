@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import { authenticate } from "./middleware/auth";
+import { getSmtpConfigs } from "./lib/email";
 import authRoutes from "./modules/auth/auth.routes";
 import projectRoutes from "./modules/project/project.routes";
 import volumeRoutes from "./modules/volume/volume.routes";
@@ -95,4 +96,11 @@ app.use((_err: any, _req: express.Request, res: express.Response, _next: express
 
 app.listen(PORT, () => {
   console.log(`[server] 希陆Flow API 已启动 → http://localhost:${PORT}`);
+  const smtp = getSmtpConfigs();
+  const keys = Object.keys(smtp);
+  if (keys.length > 0) {
+    console.log(`[server] SMTP 已配置: ${keys.map(k => `${k} (${smtp[k].user})`).join(", ")}`);
+  } else {
+    console.log("[server] SMTP 未配置，邮件将仅打印到控制台");
+  }
 });

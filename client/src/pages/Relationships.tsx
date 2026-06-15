@@ -5,10 +5,11 @@ import {
   type Node, type Edge, MarkerType, BackgroundVariant,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { Plus, Trash2, Users, X } from "lucide-react";
-import { listRelationships, createRelationship, deleteRelationship, type RelationData } from "@/api/relationship";
+import { Plus, Users, X, Trash2 } from "lucide-react";
+import { listRelationships, createRelationship, updateRelationship, deleteRelationship, type RelationData } from "@/api/relationship";
 import { listCharacters, type CharacterBrief } from "@/api/character";
 import { ProjectSelector } from "@/components/shared/ProjectSelector";
+import { useProjectStore } from "@/stores/project";
 
 const RELATION_TYPES = [
   { value: "家人", label: "家人", color: "#4ecdc4" },
@@ -20,7 +21,7 @@ const RELATION_TYPES = [
   { value: "其他", label: "其他", color: "#999" },
 ];
 
-function buildGraph(rels: RelationData[], onDelete: (id: string, label: string) => void) {
+function buildGraph(rels: RelationData[], _onDelete: (id: string, label: string) => void) {
   const charMap = new Map<string, { id: string; name: string }>();
   for (const r of rels) {
     if (!charMap.has(r.characterA.id)) charMap.set(r.characterA.id, r.characterA);
@@ -53,7 +54,7 @@ function buildGraph(rels: RelationData[], onDelete: (id: string, label: string) 
     if (y > 400) { y = 0; x += 160; }
   }
 
-  const edges: Edge[] = rels.map((r, i) => {
+  const edges: Edge[] = rels.map((r, _i) => {
     const cfg = RELATION_TYPES.find((t) => t.value === r.type) || RELATION_TYPES[6];
     return {
       id: r.id,
@@ -76,16 +77,21 @@ function buildGraph(rels: RelationData[], onDelete: (id: string, label: string) 
 
 export function Relationships() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const projectId = searchParams.get("project") || "";
+  const globalProjectId = useProjectStore((s) => s.selectedProjectId);
+  const projectId = globalProjectId || searchParams.get("project") || "";
 const [rels, setRels] = useState<RelationData[]>([]);
   const [loading, setLoading] = useState(false);
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
-  // Create modal state
+  // Create / Edit modal state
   const [showCreate, setShowCreate] = useState(false);
+  const [editingRelId, setEditingRelId] = useState<string | null>(null);
   const [characters, setCharacters] = useState<CharacterBrief[]>([]);
   const [form, setForm] = useState({ characterAId: "", characterBId: "", type: "友情", subType: "", intensity: 5, description: "" });
+
+  // Confirm modal
+  const [confirm, setConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
 const refresh = useCallback(async () => {
     if (!projectId) return;
@@ -112,36 +118,56 @@ const refresh = useCallback(async () => {
     setCharacters(chars);
   };
 
-  const handleCreate = async () => {
+  const handleSubmit = async () => {
     if (!form.characterAId || !form.characterBId || !projectId) return;
-    await createRelationship(projectId, {
+    const payload = {
       characterAId: form.characterAId,
       characterBId: form.characterBId,
       type: form.type,
       subType: form.subType || undefined,
       intensity: form.intensity,
       description: form.description || undefined,
-    });
+    };
+    if (editingRelId) {
+      await updateRelationship(editingRelId, payload);
+    } else {
+      await createRelationship(projectId, payload);
+    }
     setShowCreate(false);
+    setEditingRelId(null);
     setForm({ characterAId: "", characterBId: "", type: "友情", subType: "", intensity: 5, description: "" });
     refresh();
   };
 
-  const handleDeleteEdge = useCallback(async (edgeId: string, label: string) => {
-    if (confirm(`确定删除关系「${label}」？`)) {
-      await deleteRelationship(edgeId);
-      refresh();
-    }
-  }, [refresh]);
+  const handleDeleteEdge = (edgeId: string, label: string) => {
+    setConfirm({
+      title: "删除关系",
+      message: `确定删除关系「${label}」吗？`,
+      onConfirm: async () => { await deleteRelationship(edgeId); setConfirm(null); refresh(); },
+    });
+  };
 
-  // Handle edge click to delete
+  // Handle edge click to edit
   const onEdgeClick = useCallback((_event: React.MouseEvent, edge: Edge) => {
-    handleDeleteEdge(edge.id, edge.data?.label || "");
-  }, [handleDeleteEdge]);
+    const relId = (edge.data as { relationId?: string })?.relationId;
+    if (!relId) return;
+    const rel = rels.find((r) => r.id === relId);
+    if (!rel) return;
+    setEditingRelId(rel.id);
+    setForm({
+      characterAId: rel.characterAId,
+      characterBId: rel.characterBId,
+      type: rel.type,
+      subType: rel.subType || "",
+      intensity: rel.intensity,
+      description: rel.description || "",
+    });
+    setShowCreate(true);
+  }, [rels]);
 
   if (!projectId) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4" style={{ backgroundColor: "var(--bg-primary)" }}>
+      <div className="flex h-full flex-col items-center justify-center gap-4">
         <Users size={48} style={{ color: "var(--text-secondary)", opacity: 0.4 }} />
         <p className="text-sm" style={{ color: "var(--text-secondary)" }}>选择一个作品以查看人物关系</p>
         <ProjectSelector value="" onChange={(id) => setSearchParams({ project: id })}
@@ -152,7 +178,7 @@ const refresh = useCallback(async () => {
   }
 
   return (
-    <div className="flex h-full" style={{ backgroundColor: "var(--bg-primary)" }}>
+    <div className="flex h-full">
       {/* 图区域 */}
       <div className="flex-1 relative">
         {loading ? (
@@ -163,7 +189,7 @@ const refresh = useCallback(async () => {
           <div className="flex flex-col items-center justify-center h-full gap-4">
             <Users size={48} style={{ color: "var(--text-secondary)", opacity: 0.3 }} />
             <p className="text-sm" style={{ color: "var(--text-secondary)" }}>还没有人物关系</p>
-            <button onClick={async () => { await loadCharacters(); setShowCreate(true); }}
+            <button onClick={async () => { setEditingRelId(null); setForm({ characterAId: "", characterBId: "", type: "友情", subType: "", intensity: 5, description: "" }); await loadCharacters(); setShowCreate(true); }}
               className="flex items-center gap-1.5 rounded-md px-4 py-2 text-xs font-medium transition-all hover:scale-105"
               style={{ backgroundColor: "var(--accent)", color: "#fff" }}>
               <Plus size={14} />添加第一条关系
@@ -182,7 +208,7 @@ const refresh = useCallback(async () => {
             deleteKeyCode={null}
           >
             <MiniMap
-              style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
+              style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}
               maskColor="var(--bg-primary)"
               nodeColor="var(--accent)"
             />
@@ -199,7 +225,7 @@ const refresh = useCallback(async () => {
             className="rounded-md px-3 py-1.5 text-xs outline-none"
             style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
           {rels.length > 0 && (
-            <button onClick={async () => { await loadCharacters(); setShowCreate(true); }}
+            <button onClick={async () => { setEditingRelId(null); setForm({ characterAId: "", characterBId: "", type: "友情", subType: "", intensity: 5, description: "" }); await loadCharacters(); setShowCreate(true); }}
               className="flex items-center gap-1 rounded-md px-3 py-1.5 text-xs font-medium transition-all hover:scale-105"
               style={{ backgroundColor: "var(--accent)", color: "#fff" }}>
               <Plus size={14} />添加关系
@@ -210,7 +236,7 @@ const refresh = useCallback(async () => {
         {/* 图例 */}
         {rels.length > 0 && (
           <div className="absolute bottom-4 left-4 flex gap-3 z-10">
-            <div className="rounded-lg px-3 py-2 text-[10px]" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div className="rounded-lg px-3 py-2 text-[10px]" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
               <div className="flex flex-wrap gap-x-3 gap-y-1">
                 {RELATION_TYPES.map((t) => (
                   <span key={t.value} className="flex items-center gap-1">
@@ -220,22 +246,22 @@ const refresh = useCallback(async () => {
                 ))}
               </div>
               <p className="mt-1.5" style={{ color: "var(--text-secondary)", opacity: 0.5 }}>
-                点击连线可删除关系 · 拖拽节点调整位置 · 滚轮缩放
+                点击连线可编辑关系 · 拖拽节点调整位置 · 滚轮缩放
               </p>
             </div>
           </div>
         )}
       </div>
 
-      {/* 新建关系弹窗 */}
+      {/* 新建/编辑关系弹窗 */}
       {showCreate && (
         <>
-          <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setShowCreate(false)} />
+          <div className="fixed inset-0 z-40 bg-black/40" onClick={() => { setShowCreate(false); setEditingRelId(null); }} />
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="w-full max-w-md rounded-lg p-6 animate-fade-in" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div className="w-full max-w-md rounded-lg p-6 animate-fade-in" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-light" style={{ color: "var(--text-primary)" }}>添加人物关系</h2>
-                <button onClick={() => setShowCreate(false)} className="p-1"><X size={16} style={{ color: "var(--text-secondary)" }} /></button>
+                <h2 className="text-lg font-light" style={{ color: "var(--text-primary)" }}>{editingRelId ? "编辑人物关系" : "添加人物关系"}</h2>
+                <button onClick={() => { setShowCreate(false); setEditingRelId(null); }} className="p-1"><X size={16} style={{ color: "var(--text-secondary)" }} /></button>
               </div>
 
               <div className="space-y-3">
@@ -305,11 +331,34 @@ const refresh = useCallback(async () => {
                 </div>
               </div>
 
-              <div className="mt-4 flex justify-end gap-2">
-                <button onClick={() => setShowCreate(false)} className="rounded-md px-4 py-2 text-xs" style={{ color: "var(--text-secondary)" }}>取消</button>
-                <button onClick={handleCreate} disabled={!form.characterAId || !form.characterBId}
+              <div className="mt-4 flex items-center justify-between gap-2">
+                {editingRelId && (
+                  <button onClick={() => handleDeleteEdge(editingRelId, (rels.find((r) => r.id === editingRelId)?.characterA.name || "") + " → " + (rels.find((r) => r.id === editingRelId)?.characterB.name || ""))}
+                    className="rounded-md px-3 py-2 text-xs flex items-center gap-1" style={{ color: "#c1554b" }}>
+                    <Trash2 size={13} />删除
+                  </button>
+                )}
+                <div className="flex-1" />
+                <button onClick={() => { setShowCreate(false); setEditingRelId(null); }} className="rounded-md px-4 py-2 text-xs" style={{ color: "var(--text-secondary)" }}>取消</button>
+                <button onClick={handleSubmit} disabled={!form.characterAId || !form.characterBId}
                   className="rounded-md px-4 py-2 text-xs font-medium"
-                  style={{ backgroundColor: "var(--accent)", color: "#fff", opacity: !form.characterAId || !form.characterBId ? 0.6 : 1 }}>创建关系</button>
+                  style={{ backgroundColor: "var(--accent)", color: "#fff", opacity: !form.characterAId || !form.characterBId ? 0.6 : 1 }}>{editingRelId ? "保存" : "创建关系"}</button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+      {/* 确认弹窗 */}
+      {confirm && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setConfirm(null)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="w-full max-w-xs rounded-lg p-5 animate-fade-in" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
+              <h3 className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{confirm.title}</h3>
+              <p className="mt-2 text-xs" style={{ color: "var(--text-secondary)" }}>{confirm.message}</p>
+              <div className="mt-4 flex justify-end gap-2">
+                <button onClick={() => setConfirm(null)} className="rounded-md px-3 py-1.5 text-xs" style={{ color: "var(--text-secondary)" }}>取消</button>
+                <button onClick={() => confirm.onConfirm()} className="rounded-md px-3 py-1.5 text-xs font-medium" style={{ backgroundColor: "#c1554b", color: "#fff" }}>确定删除</button>
               </div>
             </div>
           </div>

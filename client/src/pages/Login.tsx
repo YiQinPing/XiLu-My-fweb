@@ -29,7 +29,7 @@ export function Login() {
 
   return (
     <div className="flex h-full items-center justify-center" style={{ backgroundColor: "var(--bg-primary)" }}>
-      <div className="w-full max-w-sm rounded-lg p-8 animate-fade-in" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+      <div className="w-full max-w-sm rounded-lg p-8 animate-fade-in" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
         <h1 className="mb-2 text-center text-2xl font-light">希陆Flow</h1>
         <p className="mb-6 text-center text-sm" style={{ color: "var(--text-secondary)" }}>登录您的写作空间</p>
 
@@ -66,6 +66,11 @@ export function Login() {
           >
             {loading ? "登录中..." : "登录"}
           </button>
+          <div className="text-right">
+            <Link to="/forgot-password" className="text-xs" style={{ color: "var(--text-secondary)" }}>
+              忘记密码？
+            </Link>
+          </div>
         </form>
         <p className="mt-4 text-center text-xs" style={{ color: "var(--text-secondary)" }}>
           还没有账号？<Link to="/register" style={{ color: "var(--accent)" }}>注册</Link>

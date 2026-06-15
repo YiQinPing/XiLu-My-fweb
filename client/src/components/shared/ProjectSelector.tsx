@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus } from "lucide-react";
 import { listProjects, createProject, type Project } from "@/api/project";
+import { useProjectStore } from "@/stores/project";
 
 interface Props {
   value: string;
@@ -14,9 +14,23 @@ export function ProjectSelector({ value, onChange, className, style }: Props) {
   const [projects, setProjects] = useState<Project[]>([]);
   const [creating, setCreating] = useState(false);
   const navigate = useNavigate();
+  const globalProjectId = useProjectStore((s) => s.selectedProjectId);
+  const setGlobalProject = useProjectStore((s) => s.setSelectedProject);
 
   useEffect(() => {
-    listProjects().then(setProjects).catch(() => {});
+    listProjects().then((list) => {
+      setProjects(list);
+      // Auto-select: if no project is selected and user has projects, pick first
+      if (!value && list.length > 0) {
+        if (globalProjectId && list.some((p) => p.id === globalProjectId)) {
+          onChange(globalProjectId);
+        } else if (list.length > 0) {
+          const first = list[0];
+          onChange(first.id);
+          setGlobalProject(first.id);
+        }
+      }
+    }).catch(() => {});
   }, []);
 
   const handleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -29,6 +43,7 @@ export function ProjectSelector({ value, onChange, className, style }: Props) {
         const project = await createProject({ title: name.trim() });
         setProjects((prev) => [...prev, project]);
         onChange(project.id);
+        setGlobalProject(project.id);
         navigate("/project/" + project.id);
       } catch {
         // ignore
@@ -37,6 +52,7 @@ export function ProjectSelector({ value, onChange, className, style }: Props) {
       }
     } else {
       onChange(val);
+      setGlobalProject(val);
     }
   };
 

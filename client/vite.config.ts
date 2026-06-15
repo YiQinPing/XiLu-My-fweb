@@ -8,15 +8,17 @@ export default defineConfig({
     react(),
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["favicon.ico"],
+      includeAssets: ["favicon.svg", "icon-192.png", "icon-512.png", "icon-512-maskable.png"],
       manifest: {
         name: "希陆Flow - 小说写作助手",
         short_name: "希陆Flow",
-        description: "面向小说家的全功能写作辅助平台",
+        description: "面向小说家的全功能写作辅助平台，内置 AI 辅助写作",
         theme_color: "#1a1a1a",
         background_color: "#1a1a1a",
         display: "standalone",
         orientation: "any",
+        scope: "/",
+        start_url: "/",
         icons: [
           {
             src: "/icon-192.png",
@@ -27,6 +29,12 @@ export default defineConfig({
             src: "/icon-512.png",
             sizes: "512x512",
             type: "image/png",
+          },
+          {
+            src: "/icon-512-maskable.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable",
           },
         ],
       },
@@ -51,6 +59,7 @@ export default defineConfig({
     },
   },
   server: {
+    host: true,
     port: 5173,
     proxy: {
       "/api": {

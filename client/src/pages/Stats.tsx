@@ -5,6 +5,7 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 import { ProjectSelector } from "@/components/shared/ProjectSelector";
 import * as statsApi from "@/api/stats";
 import type { StatsSummary, WritingAnalysis } from "@/api/stats";
+import { useProjectStore } from "@/stores/project";
 
 function fmtTime(sec: number): string {
   const h = Math.floor(sec / 3600);
@@ -25,7 +26,8 @@ const tabs = [
 
 export function Stats() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const projectId = searchParams.get("project") || "";
+  const globalProjectId = useProjectStore((s) => s.selectedProjectId);
+  const projectId = globalProjectId || searchParams.get("project") || "";
   const [activeTab, setActiveTab] = useState("daily");
 
   // Daily stats
@@ -77,7 +79,7 @@ export function Stats() {
 
   if (!projectId) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4" style={{ backgroundColor: "var(--bg-primary)" }}>
+      <div className="flex h-full flex-col items-center justify-center gap-4">
         <BarChart3 size={48} style={{ color: "var(--text-secondary)", opacity: 0.4 }} />
         <p className="text-sm" style={{ color: "var(--text-secondary)" }}>选择一个作品以查看数据</p>
         <ProjectSelector value="" onChange={(id) => setSearchParams({ project: id })}
@@ -114,7 +116,7 @@ export function Stats() {
   };
 
   return (
-    <div className="flex h-full flex-col" style={{ backgroundColor: "var(--bg-primary)" }}>
+    <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex items-center gap-4 px-8 py-6">
         <BarChart3 size={20} style={{ color: "var(--accent)" }} />
@@ -155,7 +157,7 @@ export function Stats() {
                   { icon: Flame, label: "连续天数", value: `${summary?.streak || 0} 天`, color: "#e8a87c" },
                   { icon: Clock, label: "写作时长", value: fmtTime(summary?.totalTimeSec || 0), color: "#9b7ec4" },
                 ].map((card, i) => (
-                  <div key={i} className="rounded-lg p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                  <div key={i} className="rounded-lg p-4" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
                     <div className="flex items-center gap-2 mb-1">
                       <card.icon size={14} style={{ color: card.color }} />
                       <span className="text-[10px]" style={{ color: "var(--text-secondary)" }}>{card.label}</span>
@@ -166,7 +168,7 @@ export function Stats() {
               </div>
 
               {/* Word Count Trend */}
-              <div className="rounded-lg p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+              <div className="rounded-lg p-5" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
                 <h3 className="text-xs font-medium mb-4" style={{ color: "var(--text-secondary)" }}>字数趋势（近7天）</h3>
                 {chartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={200}>
@@ -184,7 +186,7 @@ export function Stats() {
               </div>
 
               {/* Calendar Heatmap */}
-              <div className="rounded-lg p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+              <div className="rounded-lg p-5" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
                 <h3 className="text-xs font-medium mb-3" style={{ color: "var(--text-secondary)" }}>写作热力图（近90天）</h3>
                 <div className="flex flex-wrap gap-0.5">
                   {heatMapDays.map((d, i) => (
@@ -203,7 +205,7 @@ export function Stats() {
 
               {/* Goal & Manual Entry */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="rounded-lg p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                <div className="rounded-lg p-5" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
                   <div className="flex items-center gap-2 mb-3">
                     <Target size={14} style={{ color: "var(--accent)" }} />
                     <h3 className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>每日目标</h3>
@@ -230,7 +232,7 @@ export function Stats() {
                   )}
                 </div>
 
-                <div className="rounded-lg p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                <div className="rounded-lg p-5" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
                   <div className="flex items-center gap-2 mb-3">
                     <BookOpen size={14} style={{ color: "var(--accent)" }} />
                     <h3 className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>手动记录</h3>
@@ -271,7 +273,7 @@ export function Stats() {
                   { icon: Activity, label: "平均句长", value: `${analysis.overall.avgSentenceLength} 字`, color: "#e8a87c" },
                   { icon: MessageSquare, label: "对话占比", value: `${analysis.overall.avgDialogueRatio}%`, color: "#9b7ec4" },
                 ].map((card, i) => (
-                  <div key={i} className="rounded-lg p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                  <div key={i} className="rounded-lg p-4" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
                     <div className="flex items-center gap-2 mb-1">
                       <card.icon size={14} style={{ color: card.color }} />
                       <span className="text-[10px]" style={{ color: "var(--text-secondary)" }}>{card.label}</span>
@@ -282,7 +284,7 @@ export function Stats() {
               </div>
 
               {/* Chapter word count chart */}
-              <div className="rounded-lg p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+              <div className="rounded-lg p-5" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
                 <h3 className="text-xs font-medium mb-4" style={{ color: "var(--text-secondary)" }}>各章字数分布</h3>
                 <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={analysis.chapters.slice(0, 20)}>
@@ -296,7 +298,7 @@ export function Stats() {
               </div>
 
               {/* Dialogue ratio per chapter */}
-              <div className="rounded-lg p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+              <div className="rounded-lg p-5" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
                 <h3 className="text-xs font-medium mb-4" style={{ color: "var(--text-secondary)" }}>各章对话占比</h3>
                 <ResponsiveContainer width="100%" height={200}>
                   <LineChart data={analysis.chapters.slice(0, 20)}>
@@ -311,7 +313,7 @@ export function Stats() {
 
               {/* Character appearances */}
               {analysis.charAppearances.length > 0 && (
-                <div className="rounded-lg p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                <div className="rounded-lg p-5" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
                   <div className="flex items-center gap-2 mb-4">
                     <Users size={14} style={{ color: "#6cc070" }} />
                     <h3 className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>人物出场分析</h3>
@@ -339,7 +341,7 @@ export function Stats() {
 
               {/* Top frequent words */}
               {analysis.wordFrequency.length > 0 && (
-                <div className="rounded-lg p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                <div className="rounded-lg p-5" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
                   <div className="flex items-center gap-2 mb-4">
                     <Hash size={14} style={{ color: "#9b7ec4" }} />
                     <h3 className="text-xs font-medium" style={{ color: "var(--text-secondary)" }}>高频词 Top 30</h3>

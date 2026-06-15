@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
-import { Clock, Plus, Trash2, MapPin, ChevronRight, X, Calendar } from "lucide-react";
+import { Clock, Plus, Trash2, MapPin, X, Calendar, Edit3 } from "lucide-react";
 import {
-  listTimelines, createTimeline, deleteTimeline,
-  listEvents, createEvent, deleteEvent,
+  listTimelines, createTimeline, updateTimeline, deleteTimeline,
+  listEvents, createEvent, updateEvent, deleteEvent,
   type TimelineData, type TimelineEventData,
 } from "@/api/timeline";
 import { listProjects, type Project } from "@/api/project";
 import { ProjectSelector } from "@/components/shared/ProjectSelector";
+import { useProjectStore } from "@/stores/project";
 
 const STATUS_COLORS: Record<string, string> = {
   PLANNED: "#4a9eff",
@@ -19,18 +20,27 @@ const IMPORTANCE_STARS: Record<number, string> = { 1: "·", 3: "··", 5: "··�
 
 export function Timeline() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const projectId = searchParams.get("project") || "";
+  const globalProjectId = useProjectStore((s) => s.selectedProjectId);
+  const projectId = globalProjectId || searchParams.get("project") || "";
   const [projects, setProjects] = useState<Project[]>([]);
   const [timelines, setTimelines] = useState<TimelineData[]>([]);
   const [selectedTl, setSelectedTl] = useState<string | null>(null);
   const [events, setEvents] = useState<TimelineEventData[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Create modals
+  // Create / Edit modals
   const [showNewTl, setShowNewTl] = useState(false);
   const [tlName, setTlName] = useState("");
   const [showNewEv, setShowNewEv] = useState(false);
+  const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [evForm, setEvForm] = useState({ title: "", date: "", eventType: "GENERAL", description: "", importance: 3 });
+
+  // Timeline rename
+  const [renameTlId, setRenameTlId] = useState<string | null>(null);
+  const [renameTlName, setRenameTlName] = useState("");
+
+  // Confirm modal
+  const [confirm, setConfirm] = useState<{ title: string; message: string; onConfirm: () => void } | null>(null);
 
   useEffect(() => { listProjects().then(setProjects).catch(() => {}); }, []);
 
@@ -78,9 +88,41 @@ export function Timeline() {
     loadEvents(selectedTl);
   };
 
+  const handleEditEv = async () => {
+    if (!evForm.title.trim() || !editingEventId) return;
+    await updateEvent(editingEventId, {
+      title: evForm.title.trim(),
+      date: evForm.date || undefined,
+      eventType: evForm.eventType,
+      description: evForm.description || undefined,
+      importance: evForm.importance,
+    });
+    setEvForm({ title: "", date: "", eventType: "GENERAL", description: "", importance: 3 });
+    setEditingEventId(null);
+    if (selectedTl) loadEvents(selectedTl);
+  };
+
+  const startEditEvent = (ev: TimelineEventData) => {
+    setEditingEventId(ev.id);
+    setEvForm({
+      title: ev.title,
+      date: ev.date || "",
+      eventType: ev.eventType,
+      description: ev.description || "",
+      importance: ev.importance,
+    });
+  };
+
+  const handleRenameTl = async () => {
+    if (!renameTlId || !renameTlName.trim()) return;
+    await updateTimeline(renameTlId, { name: renameTlName.trim() });
+    setTimelines((prev) => prev.map((t) => (t.id === renameTlId ? { ...t, name: renameTlName.trim() } : t)));
+    setRenameTlId(null);
+  };
+
   if (!projectId) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4" style={{ backgroundColor: "var(--bg-primary)" }}>
+      <div className="flex h-full flex-col items-center justify-center gap-4">
         <Clock size={48} style={{ color: "var(--text-secondary)", opacity: 0.4 }} />
         <p className="text-sm" style={{ color: "var(--text-secondary)" }}>选择一个作品以查看时间线</p>
         <ProjectSelector value="" onChange={(id) => setSearchParams({ project: id })}
@@ -98,7 +140,7 @@ export function Timeline() {
   });
 
   return (
-    <div className="flex h-full" style={{ backgroundColor: "var(--bg-primary)" }}>
+    <div className="flex h-full">
       {/* 左侧时间线列表 */}
       <div className="w-56 border-r flex flex-col flex-shrink-0" style={{ borderColor: "var(--border)" }}>
         <div className="flex items-center justify-between px-4 py-3">
@@ -122,12 +164,17 @@ export function Timeline() {
                   color: selectedTl === tl.id ? "var(--accent)" : "var(--text-secondary)",
                 }}>
                 <span className="truncate flex-1">{tl.name}</span>
-                <button onClick={async (e) => {
-                  e.stopPropagation();
-                  if (confirm("确定删除此时间线？")) { await deleteTimeline(tl.id); setSelectedTl(null); loadTimelines(); }
-                }} className="p-0.5 opacity-0 group-hover:opacity-100">
-                  <Trash2 size={10} style={{ color: "#c1554b" }} />
-                </button>
+                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100">
+                  <span onClick={(e) => { e.stopPropagation(); setRenameTlId(tl.id); setRenameTlName(tl.name); }}
+                    className="p-0.5 rounded" style={{ color: "var(--text-secondary)" }}>
+                    <Edit3 size={10} />
+                  </span>
+                  <span onClick={(e) => { e.stopPropagation();
+                    setConfirm({ title: "删除时间线", message: "确定删除此时间线吗？", onConfirm: async () => { await deleteTimeline(tl.id); setSelectedTl(null); setConfirm(null); loadTimelines(); } });
+                  }} className="p-0.5 rounded" style={{ color: "#c1554b" }}>
+                    <Trash2 size={10} />
+                  </span>
+                </div>
               </button>
             ))
           )}
@@ -187,10 +234,11 @@ export function Timeline() {
                       style={{ backgroundColor: "var(--bg-primary)", borderColor: color, boxShadow: ev.importance >= 7 ? "0 0 6px " + color : "none" }} />
 
                     {/* 内容卡片 */}
-                    <div className="rounded-lg p-4 hover:brightness-95 transition-all"
-                      style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                    <div className="rounded-lg p-4 hover:brightness-95 transition-all cursor-pointer group"
+                      style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}
+                      onClick={() => startEditEvent(ev)}>
                       <div className="flex items-start justify-between gap-4">
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <h3 className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{ev.title}</h3>
                             {ev.importance >= 7 && (
@@ -220,12 +268,17 @@ export function Timeline() {
                             }}>{ev.status === "PLANNED" ? "计划中" : ev.status === "HAPPENED" ? "已发生" : "进行中"}</span>
                           </div>
                         </div>
-                        <button onClick={async () => {
-                          if (confirm("确定删除此事件？")) { await deleteEvent(ev.id); loadEvents(selectedTl); }
-                        }} className="p-1 rounded opacity-0 hover:opacity-100 hover:brightness-90 transition-opacity"
-                        style={{ opacity: 0.3 }}>
-                          <Trash2 size={12} style={{ color: "#c1554b" }} />
-                        </button>
+                        <div className="flex flex-col gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={(e) => { e.stopPropagation(); startEditEvent(ev); }}
+                            className="p-1 rounded hover:brightness-90" style={{ color: "var(--text-secondary)" }}>
+                            <Edit3 size={12} />
+                          </button>
+                          <button onClick={(e) => { e.stopPropagation();
+                            setConfirm({ title: "删除事件", message: "确定删除此事件？", onConfirm: async () => { await deleteEvent(ev.id); setConfirm(null); if (selectedTl) loadEvents(selectedTl); } });
+                          }} className="p-1 rounded hover:brightness-90" style={{ color: "#c1554b" }}>
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -241,7 +294,7 @@ export function Timeline() {
         <>
           <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setShowNewTl(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="w-full max-w-sm rounded-lg p-6 animate-fade-in" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div className="w-full max-w-sm rounded-lg p-6 animate-fade-in" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
               <h2 className="text-lg font-light" style={{ color: "var(--text-primary)" }}>新建时间线</h2>
               <input autoFocus type="text" placeholder="时间线名称" value={tlName}
                 onChange={(e) => setTlName(e.target.value)}
@@ -259,20 +312,44 @@ export function Timeline() {
         </>
       )}
 
-      {/* 新建事件弹窗 */}
-      {showNewEv && (
+      {/* 重命名时间线弹窗 */}
+      {renameTlId && (
         <>
-          <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setShowNewEv(false)} />
+          <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setRenameTlId(null)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="w-full max-w-md rounded-lg p-6 animate-fade-in" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div className="w-full max-w-sm rounded-lg p-6 animate-fade-in" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
+              <h2 className="text-lg font-light" style={{ color: "var(--text-primary)" }}>重命名时间线</h2>
+              <input autoFocus type="text" placeholder="时间线名称" value={renameTlName}
+                onChange={(e) => setRenameTlName(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleRenameTl()}
+                className="mt-4 w-full rounded-md px-3 py-2 text-sm outline-none"
+                style={{ backgroundColor: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
+              <div className="mt-4 flex justify-end gap-2">
+                <button onClick={() => setRenameTlId(null)} className="rounded-md px-4 py-2 text-xs" style={{ color: "var(--text-secondary)" }}>取消</button>
+                <button onClick={handleRenameTl} disabled={!renameTlName.trim()}
+                  className="rounded-md px-4 py-2 text-xs font-medium"
+                  style={{ backgroundColor: "var(--accent)", color: "#fff", opacity: !renameTlName.trim() ? 0.6 : 1 }}>保存</button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* 新建/编辑事件弹窗 */}
+      {(showNewEv || editingEventId) && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/40" onClick={() => { setShowNewEv(false); setEditingEventId(null); }} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="w-full max-w-md rounded-lg p-6 animate-fade-in" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-light" style={{ color: "var(--text-primary)" }}>添加事件</h2>
-                <button onClick={() => setShowNewEv(false)} className="p-1"><X size={16} style={{ color: "var(--text-secondary)" }} /></button>
+                <h2 className="text-lg font-light" style={{ color: "var(--text-primary)" }}>{editingEventId ? "编辑事件" : "添加事件"}</h2>
+                <button onClick={() => { setShowNewEv(false); setEditingEventId(null); }} className="p-1"><X size={16} style={{ color: "var(--text-secondary)" }} /></button>
               </div>
 
               <div className="space-y-3">
                 <input autoFocus type="text" placeholder="事件标题" value={evForm.title}
                   onChange={(e) => setEvForm({ ...evForm, title: e.target.value })}
+                  onKeyDown={(e) => e.key === "Enter" && (editingEventId ? handleEditEv() : handleCreateEv())}
                   className="w-full rounded-md px-3 py-2 text-sm outline-none"
                   style={{ backgroundColor: "var(--bg-primary)", border: "1px solid var(--border)", color: "var(--text-primary)" }} />
 
@@ -319,10 +396,26 @@ export function Timeline() {
               </div>
 
               <div className="mt-4 flex justify-end gap-2">
-                <button onClick={() => setShowNewEv(false)} className="rounded-md px-4 py-2 text-xs" style={{ color: "var(--text-secondary)" }}>取消</button>
-                <button onClick={handleCreateEv} disabled={!evForm.title.trim()}
+                <button onClick={() => { setShowNewEv(false); setEditingEventId(null); }} className="rounded-md px-4 py-2 text-xs" style={{ color: "var(--text-secondary)" }}>取消</button>
+                <button onClick={editingEventId ? handleEditEv : handleCreateEv} disabled={!evForm.title.trim()}
                   className="rounded-md px-4 py-2 text-xs font-medium"
-                  style={{ backgroundColor: "var(--accent)", color: "#fff", opacity: !evForm.title.trim() ? 0.6 : 1 }}>添加</button>
+                  style={{ backgroundColor: "var(--accent)", color: "#fff", opacity: !evForm.title.trim() ? 0.6 : 1 }}>{editingEventId ? "保存" : "添加"}</button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+      {/* 确认弹窗 */}
+      {confirm && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setConfirm(null)} />
+          <div className="fixed inset-0 z-50 flex items-center justify-center">
+            <div className="w-full max-w-xs rounded-lg p-5 animate-fade-in" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
+              <h3 className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{confirm.title}</h3>
+              <p className="mt-2 text-xs" style={{ color: "var(--text-secondary)" }}>{confirm.message}</p>
+              <div className="mt-4 flex justify-end gap-2">
+                <button onClick={() => setConfirm(null)} className="rounded-md px-3 py-1.5 text-xs" style={{ color: "var(--text-secondary)" }}>取消</button>
+                <button onClick={() => confirm.onConfirm()} className="rounded-md px-3 py-1.5 text-xs font-medium" style={{ backgroundColor: "#c1554b", color: "#fff" }}>确定删除</button>
               </div>
             </div>
           </div>

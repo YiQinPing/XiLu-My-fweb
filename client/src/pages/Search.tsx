@@ -3,8 +3,9 @@ import { useSearchParams } from "react-router-dom";
 import { Search as SearchIcon, FileText, Users, MapPin, Building2, Package, ListTree } from "lucide-react";
 import { search, type SearchResult } from "@/api/search";
 import { ProjectSelector } from "@/components/shared/ProjectSelector";
+import { useProjectStore } from "@/stores/project";
 
-const typeCfg: Record<string, { icon: React.ComponentType<{ size?: number }>; label: string; color: string }> = {
+const typeCfg: Record<string, { icon: React.ComponentType<{ size?: number; style?: React.CSSProperties }>; label: string; color: string }> = {
   chapter:    { icon: FileText,   label: "章节", color: "#4a9eff" },
   character:  { icon: Users,      label: "人物", color: "#e8a87c" },
   location:   { icon: MapPin,     label: "地点", color: "#6cc070" },
@@ -15,7 +16,8 @@ const typeCfg: Record<string, { icon: React.ComponentType<{ size?: number }>; la
 
 export function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const projectId = searchParams.get("project") || "";
+  const globalProjectId = useProjectStore((s) => s.selectedProjectId);
+  const projectId = globalProjectId || searchParams.get("project") || "";
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
@@ -34,7 +36,7 @@ const doSearch = useCallback(async (q: string, pid: string) => {
 
   if (!projectId) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4" style={{ backgroundColor: "var(--bg-primary)" }}>
+      <div className="flex h-full flex-col items-center justify-center gap-4">
         <SearchIcon size={48} style={{ color: "var(--text-secondary)", opacity: 0.4 }} />
         <p className="text-sm" style={{ color: "var(--text-secondary)" }}>选择一个作品以搜索</p>
         <ProjectSelector value="" onChange={(id) => setSearchParams({ project: id })}
@@ -52,7 +54,7 @@ const doSearch = useCallback(async (q: string, pid: string) => {
   }
 
   return (
-    <div className="flex h-full flex-col" style={{ backgroundColor: "var(--bg-primary)" }}>
+    <div className="flex h-full flex-col">
       <div className="px-8 py-6">
         <div className="flex items-center gap-4">
           <div className="flex-1 relative">
@@ -103,7 +105,7 @@ const doSearch = useCallback(async (q: string, pid: string) => {
                   <div className="grid gap-2 sm:grid-cols-2">
                     {items.map((r) => (
                       <div key={r.id} className="rounded-lg p-3 hover:brightness-95 transition-all"
-                        style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                        style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
                         <div className="flex items-center gap-2">
                           <h3 className="text-sm font-medium flex-1" style={{ color: "var(--text-primary)" }}>{r.title}</h3>
                           {r.subtitle && <span className="text-[10px] rounded px-1.5 py-0.5" style={{ backgroundColor: "var(--bg-secondary)", color: "var(--text-secondary)" }}>{r.subtitle}</span>}

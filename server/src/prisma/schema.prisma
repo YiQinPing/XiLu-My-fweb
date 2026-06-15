@@ -18,6 +18,12 @@ model User {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
+  resetToken              String?
+  resetTokenExpiresAt     DateTime?
+  emailChangeToken        String?
+  emailChangeTokenExpiresAt DateTime?
+  pendingEmail            String?
+
   projects    Project[]
   preferences UserPreference[]
 }

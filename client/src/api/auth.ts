@@ -26,3 +26,28 @@ export async function getMe() {
   const res = await apiClient.get<{ success: boolean; data: { user: AuthResponse["user"] } }>("/auth/me");
   return res.data.data.user;
 }
+
+export async function forgotPassword(email: string) {
+  const res = await apiClient.post<{ success: boolean; data: { message: string } }>("/auth/forgot-password", { email });
+  return res.data.data;
+}
+
+export async function resetPassword(token: string, newPassword: string) {
+  const res = await apiClient.post<{ success: boolean; data: { message: string } }>("/auth/reset-password", { token, newPassword });
+  return res.data.data;
+}
+
+export async function changePassword(oldPassword: string, newPassword: string) {
+  const res = await apiClient.post<{ success: boolean; data: { message: string } }>("/auth/change-password", { oldPassword, newPassword });
+  return res.data.data;
+}
+
+export async function requestEmailChange(newEmail: string, password: string) {
+  const res = await apiClient.post<{ success: boolean; data: { message: string } }>("/auth/change-email", { newEmail, password });
+  return res.data.data;
+}
+
+export async function confirmEmailChange(token: string) {
+  const res = await apiClient.post<{ success: boolean; data: { message: string; email: string } }>("/auth/confirm-email-change", { token });
+  return res.data.data;
+}

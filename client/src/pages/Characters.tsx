@@ -7,6 +7,7 @@ import {
   type CharacterBrief, type CharacterDetail,
 } from "@/api/character";
 import { ProjectSelector } from "@/components/shared/ProjectSelector";
+import { useProjectStore } from "@/stores/project";
 
 type Section = "basic" | "appearance" | "personality" | "background" | "speech" | "arc" | "meta";
 
@@ -86,7 +87,7 @@ function CharacterForm({ character, onSave, onCancel }: {
 
   return (
     <div className="flex h-full flex-col" style={{ backgroundColor: "var(--surface)" }}>
-      <div className="flex flex-wrap gap-1 p-3" style={{ borderBottom: "1px solid var(--border)" }}>
+      <div className="flex flex-wrap gap-1 p-3" style={{ borderBottom: "1px solid var(--glass-border)" }}>
         {sectionDefs.map((s) => (
           <button key={s.key} onClick={() => setSection(s.key)}
             className="rounded-md px-3 py-1 text-xs transition-colors"
@@ -204,7 +205,7 @@ function CharacterForm({ character, onSave, onCancel }: {
         )}
       </div>
 
-      <div className="flex justify-end gap-2 p-3" style={{ borderTop: "1px solid var(--border)" }}>
+      <div className="flex justify-end gap-2 p-3" style={{ borderTop: "1px solid var(--glass-border)" }}>
         <button onClick={onCancel} className="rounded-md px-4 py-1.5 text-xs" style={{ color: "var(--text-secondary)" }}>取消</button>
         <button onClick={async () => { setSaving(true); await onSave(data); setSaving(false); }}
           disabled={saving || !data.name}
@@ -219,7 +220,8 @@ function CharacterForm({ character, onSave, onCancel }: {
 export function Characters() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
-  const projectId = searchParams.get("project");
+  const globalProjectId = useProjectStore((s) => s.selectedProjectId);
+  const projectId = globalProjectId || searchParams.get("project") || "";
   const [characters, setCharacters] = useState<CharacterBrief[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
@@ -288,7 +290,7 @@ export function Characters() {
 
   if (!projectId) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4" style={{ backgroundColor: "var(--bg-primary)" }}>
+      <div className="flex h-full flex-col items-center justify-center gap-4">
         <Users size={48} style={{ color: "var(--text-secondary)", opacity: 0.4 }} />
         <p className="text-sm" style={{ color: "var(--text-secondary)" }}>选择一个作品以查看人物</p>
         <ProjectSelector value="" onChange={(id) => setSearchParams({ project: id })}
@@ -299,10 +301,10 @@ export function Characters() {
   }
 
   return (
-    <div className="flex h-full" style={{ backgroundColor: "var(--bg-primary)" }}>
+    <div className="flex h-full">
       {/* 左侧列表 */}
-      <div className="flex w-72 flex-shrink-0 flex-col" style={{ borderRight: "1px solid var(--border)" }}>
-        <div className="p-4" style={{ borderBottom: "1px solid var(--border)" }}>
+      <div className="flex w-72 flex-shrink-0 flex-col" style={{ borderRight: "1px solid var(--glass-border)" }}>
+        <div className="p-4" style={{ borderBottom: "1px solid var(--glass-border)" }}>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>
               {projects.find((p) => p.id === projectId)?.title} · 人物
@@ -355,7 +357,7 @@ export function Characters() {
           )}
         </div>
 
-        <div className="p-3" style={{ borderTop: "1px solid var(--border)" }}>
+        <div className="p-3" style={{ borderTop: "1px solid var(--glass-border)" }}>
           <button onClick={() => { setCreating(true); setSelectedId(null); setCharacter(null); }}
             className="flex w-full items-center justify-center gap-1 rounded-md py-1.5 text-xs font-medium transition-all hover:scale-105"
             style={{ backgroundColor: "var(--accent)", color: "#fff" }}>
@@ -370,7 +372,7 @@ export function Characters() {
           <CharacterForm character={null} onSave={handleCreate} onCancel={() => setCreating(false)} />
         ) : character && selectedId ? (
           <div>
-            <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: "1px solid var(--border)" }}>
+            <div className="flex items-center justify-between px-4 py-2" style={{ borderBottom: "1px solid var(--glass-border)" }}>
               <span className="text-xs" style={{ color: "var(--text-secondary)" }}>编辑角色</span>
               <button onClick={() => handleDelete(selectedId)}
                 className="flex items-center gap-1 rounded px-2 py-1 text-xs hover:brightness-90" style={{ color: "#c1554b" }}>

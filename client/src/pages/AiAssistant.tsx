@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import { Sparkles, Lightbulb, CheckCircle2, PenLine, FileText, Loader2 } from "lucide-react";
 import { ProjectSelector } from "@/components/shared/ProjectSelector";
 import * as aiApi from "@/api/ai";
+import { useProjectStore } from "@/stores/project";
 
 const tabs = [
   { id: "brainstorm", icon: Lightbulb, label: "头脑风暴" },
@@ -13,7 +14,8 @@ const tabs = [
 
 export function AiAssistant() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const projectId = searchParams.get("project") || "";
+  const globalProjectId = useProjectStore((s) => s.selectedProjectId);
+  const projectId = globalProjectId || searchParams.get("project") || "";
   const [activeTab, setActiveTab] = useState("brainstorm");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState("");
@@ -42,7 +44,7 @@ export function AiAssistant() {
 
   if (!projectId) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4" style={{ backgroundColor: "var(--bg-primary)" }}>
+      <div className="flex h-full flex-col items-center justify-center gap-4">
         <Sparkles size={48} style={{ color: "var(--text-secondary)", opacity: 0.4 }} />
         <p className="text-sm" style={{ color: "var(--text-secondary)" }}>选择一个作品以使用 AI 助手</p>
         <ProjectSelector value="" onChange={(id) => setSearchParams({ project: id })}
@@ -53,7 +55,7 @@ export function AiAssistant() {
   }
 
   return (
-    <div className="flex h-full flex-col" style={{ backgroundColor: "var(--bg-primary)" }}>
+    <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex items-center gap-4 px-8 py-6">
         <Sparkles size={20} style={{ color: "var(--accent)" }} />
@@ -263,7 +265,7 @@ export function AiAssistant() {
           )}
 
           {result && (
-            <div className="rounded-lg p-5" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div className="rounded-lg p-5" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
               <div className="text-sm leading-relaxed whitespace-pre-wrap" style={{ color: "var(--text-primary)" }}>
                 {result}
               </div>

@@ -37,17 +37,17 @@ export async function aiAction(projectId: string, action: string, input: Record<
 }
 
 export function brainstorm(projectId: string, input: BrainstormInput) {
-  return aiAction(projectId, "brainstorm", input as Record<string, unknown>);
+  return aiAction(projectId, "brainstorm", input as unknown as Record<string, unknown>);
 }
 
 export function continuityCheck(projectId: string, input: ContinuityCheckInput) {
-  return aiAction(projectId, "continuity-check", input as Record<string, unknown>);
+  return aiAction(projectId, "continuity-check", input as unknown as Record<string, unknown>);
 }
 
 export function styleAssist(projectId: string, input: StyleAssistInput) {
-  return aiAction(projectId, "style-assist", input as Record<string, unknown>);
+  return aiAction(projectId, "style-assist", input as unknown as Record<string, unknown>);
 }
 
 export function summarize(projectId: string, input: SummarizeInput) {
-  return aiAction(projectId, "summarize", input as Record<string, unknown>);
+  return aiAction(projectId, "summarize", input as unknown as Record<string, unknown>);
 }

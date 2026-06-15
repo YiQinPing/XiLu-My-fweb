@@ -14,9 +14,12 @@ import {
   LogOut,
   Home,
   Plus,
+  EyeOff,
+  Settings,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth";
+import { useAppStore } from "@/stores/app";
 import { ThemeSwitcher } from "@/components/layout/ThemeSwitcher";
 import { useState } from "react";
 
@@ -33,11 +36,21 @@ const navItems = [
   { to: "/stats", icon: BarChart3, label: "数据" },
 ];
 
+const activeIconStyle: React.CSSProperties = {
+  backgroundColor: "rgba(255,255,255,0.1)",
+  boxShadow: "0 0 0 1px rgba(255,255,255,0.06), inset 0 1px 0 rgba(255,255,255,0.04)",
+};
+
+const labelClass =
+  "absolute top-1/2 -translate-y-1/2 left-[44px] text-xs font-medium whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none";
+
 export function Sidebar() {
   const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
+  const focusMode = useAppStore((s) => s.focusMode);
+  const toggleFocusMode = useAppStore((s) => s.toggleFocusMode);
 
   const handleLogout = () => {
     logout();
@@ -45,114 +58,200 @@ export function Sidebar() {
   };
 
   return (
-    <aside className="flex h-full w-[60px] flex-col items-center border-r py-4" style={{ borderColor: "var(--border)", backgroundColor: "var(--bg-secondary)" }}>
+    <aside
+      className="group flex flex-col items-center h-[calc(100%-16px)] m-2 rounded-xl z-20 transition-all duration-300 ease-out overflow-hidden"
+      style={{
+        width: "var(--sidebar-w, 48px)",
+        background: "rgba(255,255,255,0.04)",
+        backdropFilter: "blur(22px)",
+        WebkitBackdropFilter: "blur(22px)",
+        border: "1px solid rgba(255,255,255,0.07)",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05)",
+      }}
+      onMouseEnter={(e) => {
+        e.currentTarget.style.setProperty("--sidebar-w", "144px");
+      }}
+      onMouseLeave={(e) => {
+        e.currentTarget.style.setProperty("--sidebar-w", "48px");
+      }}
+    >
       {/* Logo */}
-      <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-md text-lg font-bold" style={{ color: "var(--accent)" }}>
-        希
-      </div>
-
-      {/* 首页 */}
       <NavLink
         to="/"
-        className={({ isActive }) =>
-          cn(
-            "flex h-10 w-10 items-center justify-center rounded-md transition-colors mb-1",
-            isActive
-              ? "text-[var(--accent)]"
-              : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-          )
-        }
-        title="首页"
+        className="relative flex h-10 w-full items-center flex-shrink-0 mt-3 mb-2 px-2"
       >
-        <Home size={20} />
+        <span
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-base font-bold flex-shrink-0"
+          style={{ color: "var(--accent)" }}
+        >
+          希
+        </span>
+        <span className={labelClass} style={{ color: "var(--text-primary)" }}>
+          希陆Flow
+        </span>
       </NavLink>
 
-      {/* 导航 */}
-      <nav className="flex flex-1 flex-col gap-1">
+      {/* Navigation */}
+      <nav className="flex-1 flex flex-col items-center justify-center gap-0.5 w-full px-2">
         {navItems.map((item) => (
           <NavLink
             key={item.to}
             to={item.to}
             className={({ isActive }) =>
               cn(
-                "flex h-10 w-10 items-center justify-center rounded-md transition-colors",
+                "relative flex h-10 w-full items-center rounded-lg transition-all duration-200",
                 isActive
-                  ? "text-[var(--accent)]"
-                  : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                  ? "text-[var(--text-primary)]"
+                  : "text-[var(--text-secondary)] hover:brightness-125"
               )
             }
-            title={item.label}
           >
-            <item.icon size={20} />
+            {({ isActive }) => (
+              <>
+                <span
+                  className={cn(
+                    "flex h-8 w-8 items-center justify-center flex-shrink-0 rounded-lg transition-all duration-200",
+                    isActive ? "active-icon" : ""
+                  )}
+                  style={isActive ? activeIconStyle : undefined}
+                >
+                  <item.icon size={18} />
+                </span>
+                <span className={labelClass}>
+                  {item.label}
+                </span>
+              </>
+            )}
           </NavLink>
         ))}
       </nav>
 
-      {/* 底部：搜索 + 用户 */}
-      <div className="flex flex-col items-center gap-1 relative">
+      {/* Bottom: Search + Focus + User */}
+      <div className="flex flex-col items-center gap-0.5 w-full px-2 mb-3 mt-2 flex-shrink-0">
         <NavLink
           to="/search"
           className={({ isActive }) =>
             cn(
-              "flex h-10 w-10 items-center justify-center rounded-md transition-colors",
+              "relative flex h-10 w-full items-center rounded-lg transition-all duration-200",
               isActive
-                ? "text-[var(--accent)]"
-                : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
+                ? "text-[var(--text-primary)]"
+                : "text-[var(--text-secondary)] hover:brightness-125"
             )
           }
-          title="搜索"
         >
-          <Search size={20} />
+          {({ isActive }) => (
+            <>
+              <span
+                className={cn(
+                  "flex h-8 w-8 items-center justify-center flex-shrink-0 rounded-lg transition-all duration-200",
+                  isActive ? "active-icon" : ""
+                )}
+                style={isActive ? activeIconStyle : undefined}
+              >
+                <Search size={18} />
+              </span>
+              <span className={labelClass}>
+                搜索
+              </span>
+            </>
+          )}
         </NavLink>
 
+        {/* Focus mode toggle */}
         <button
-          onClick={() => setMenuOpen(!menuOpen)}
-          className="flex h-10 w-10 items-center justify-center rounded-md transition-colors text-[var(--text-secondary)] hover:text-[var(--text-primary)]"
-          title={user?.displayName || "用户"}
+          onClick={toggleFocusMode}
+          className="relative flex h-10 w-full items-center rounded-lg transition-all duration-200 text-[var(--text-secondary)] hover:brightness-125"
         >
-          <div className="flex h-7 w-7 items-center justify-center rounded-full text-xs font-medium" style={{ backgroundColor: "var(--accent)", color: "#fff" }}>
-            {user?.displayName?.charAt(0) || "?"}
-          </div>
+          <span
+            className="flex h-8 w-8 items-center justify-center flex-shrink-0 rounded-lg transition-all duration-200"
+            style={focusMode ? { color: "var(--accent)", ...activeIconStyle } : undefined}
+          >
+            {focusMode ? <EyeOff size={18} /> : <Eye size={18} />}
+          </span>
+          <span className={labelClass}>
+            {focusMode ? "退出专注" : "专注模式"}
+          </span>
         </button>
 
-        {menuOpen && (
-          <>
-            <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-            <div
-              className="absolute bottom-12 left-0 z-20 w-40 rounded-md py-1 shadow-lg animate-fade-in"
-              style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}
+        {/* User */}
+        <div className="relative w-full">
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            className="relative flex h-10 w-full items-center rounded-lg transition-all duration-200 text-[var(--text-secondary)] hover:brightness-125"
+          >
+            <span
+              className="flex h-8 w-8 items-center justify-center flex-shrink-0 rounded-full text-[11px] font-medium"
+              style={{ backgroundColor: "var(--accent)", color: "#fff" }}
             >
-              <div className="px-3 py-1.5 text-xs border-b" style={{ color: "var(--text-secondary)", borderColor: "var(--border)" }}>
-                {user?.displayName}
+              {user?.displayName?.charAt(0) || "?"}
+            </span>
+            <span className={labelClass} style={{ color: "var(--text-primary)" }}>
+              {user?.displayName || "用户"}
+            </span>
+          </button>
+
+          {menuOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+              <div
+                className="absolute bottom-12 left-2 z-20 w-44 rounded-lg py-1 shadow-xl animate-fade-in"
+                style={{
+                  background: "rgba(30,30,30,0.95)",
+                  backdropFilter: "blur(20px)",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                }}
+              >
+                <div
+                  className="px-3 py-1.5 text-xs border-b"
+                  style={{
+                    color: "var(--text-secondary)",
+                    borderColor: "rgba(255,255,255,0.08)",
+                  }}
+                >
+                  {user?.displayName}
+                </div>
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    navigate("/");
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-xs hover:brightness-125 transition-colors"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  <Home size={13} />工作台
+                </button>
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    navigate("/?create=1");
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-xs hover:brightness-125 transition-colors"
+                  style={{ color: "var(--accent)" }}
+                >
+                  <Plus size={13} />新建作品
+                </button>
+                <button
+                  onClick={() => {
+                    setMenuOpen(false);
+                    navigate("/account");
+                  }}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-xs hover:brightness-125 transition-colors"
+                  style={{ color: "var(--text-primary)" }}
+                >
+                  <Settings size={13} />账户设置
+                </button>
+                <ThemeSwitcher />
+                <button
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-xs hover:brightness-125 transition-colors"
+                  style={{ color: "#c1554b" }}
+                >
+                  <LogOut size={13} />退出登录
+                </button>
               </div>
-              <button
-                onClick={() => { setMenuOpen(false); navigate("/"); }}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-xs hover:brightness-110 transition-colors"
-                style={{ color: "var(--text-primary)" }}
-              >
-                <Home size={12} />
-                工作台
-              </button>
-              <button
-                onClick={() => { setMenuOpen(false); navigate("/?create=1"); }}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-xs hover:brightness-110 transition-colors"
-                style={{ color: "var(--accent)" }}
-              >
-                <Plus size={12} />
-                新建作品
-              </button>
-              <ThemeSwitcher />
-              <button
-                onClick={handleLogout}
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-xs hover:brightness-110 transition-colors"
-                style={{ color: "#c1554b" }}
-              >
-                <LogOut size={12} />
-                退出登录
-              </button>
-            </div>
-          </>
-        )}
+            </>
+          )}
+        </div>
       </div>
     </aside>
   );

@@ -20,6 +20,10 @@ import { Search } from "@/pages/Search";
 import { AiAssistant } from "@/pages/AiAssistant";
 import { Login } from "@/pages/Login";
 import { Register } from "@/pages/Register";
+import { ForgotPassword } from "@/pages/ForgotPassword";
+import { ResetPassword } from "@/pages/ResetPassword";
+import { ConfirmEmailChange } from "@/pages/ConfirmEmailChange";
+import { AccountSettings } from "@/pages/AccountSettings";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,6 +52,9 @@ export default function App() {
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/confirm-email" element={<ConfirmEmailChange />} />
             <Route
               path="/"
               element={
@@ -69,6 +76,7 @@ export default function App() {
               <Route path="stats" element={<Stats />} />
               <Route path="search" element={<Search />} />
               <Route path="ai" element={<AiAssistant />} />
+              <Route path="account" element={<AccountSettings />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

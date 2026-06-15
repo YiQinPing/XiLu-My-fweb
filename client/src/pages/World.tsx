@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
 import { Plus, Trash2, Globe, MapPin, Building2, Package, ChevronDown, ChevronRight, X } from "lucide-react";
 import { listProjects, type Project } from "@/api/project";
@@ -8,13 +8,14 @@ import {
   listItems, createItem, updateItem, deleteItem, type ItemData,
 } from "@/api/world";
 import { ProjectSelector } from "@/components/shared/ProjectSelector";
+import { useProjectStore } from "@/stores/project";
 
 type Tab = "locations" | "factions" | "items";
 
 function LocNode({ node, depth, onDelete, onAdd, onEdit }: {
   node: LocationNode; depth: number;
   onDelete: (id: string) => void;
-  onAdd: (parentId: string | null) => void;
+  onAdd: (parentId: string | null) => Promise<void>;
   onEdit: (node: LocationNode) => void;
 }) {
   const [open, setOpen] = useState(true);
@@ -44,7 +45,8 @@ function LocNode({ node, depth, onDelete, onAdd, onEdit }: {
 export function World() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [searchParams, setSearchParams] = useSearchParams();
-  const projectId = searchParams.get("project");
+  const globalProjectId = useProjectStore((s) => s.selectedProjectId);
+  const projectId = globalProjectId || searchParams.get("project") || "";
   const [tab, setTab] = useState<Tab>("locations");
   const [loading, setLoading] = useState(false);
 
@@ -100,7 +102,7 @@ export function World() {
     await deleteLocation(id); refresh();
   };
 
-  const handleAddLoc = async (parentId: string) => {
+  const handleAddLoc = async (parentId: string | null) => {
     const name = prompt("子地点名称：");
     if (!name?.trim() || !projectId) return;
     await createLocation(projectId, { name: name.trim(), parentId });
@@ -132,7 +134,7 @@ export function World() {
 
   if (!projectId) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-4" style={{ backgroundColor: "var(--bg-primary)" }}>
+      <div className="flex h-full flex-col items-center justify-center gap-4">
         <Globe size={48} style={{ color: "var(--text-secondary)", opacity: 0.4 }} />
         <p className="text-sm" style={{ color: "var(--text-secondary)" }}>选择一个作品以查看世界观</p>
         <ProjectSelector value="" onChange={(id) => setSearchParams({ project: id })}
@@ -143,7 +145,7 @@ export function World() {
   }
 
   return (
-    <div className="flex h-full flex-col" style={{ backgroundColor: "var(--bg-primary)" }}>
+    <div className="flex h-full flex-col">
       {/* 顶部 */}
       <div className="flex items-center gap-4 px-8 py-6">
         <h1 className="text-2xl font-light flex-1" style={{ color: "var(--text-primary)" }}>
@@ -166,7 +168,7 @@ export function World() {
           { icon: Building2, label: "势力", count: stats.factions, color: "#c1554b" },
           { icon: Package, label: "物品", count: stats.items, color: "#f0c75e" },
         ].map((s) => (
-          <div key={s.label} className="flex items-center gap-2 rounded-lg px-4 py-2" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+          <div key={s.label} className="flex items-center gap-2 rounded-lg px-4 py-2" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
             <s.icon size={16} style={{ color: s.color }} />
             <span className="text-lg font-medium" style={{ color: "var(--text-primary)" }}>{s.count}</span>
             <span className="text-[10px]" style={{ color: "var(--text-secondary)" }}>{s.label}</span>
@@ -202,7 +204,7 @@ export function World() {
               <p className="mt-3 text-sm" style={{ color: "var(--text-secondary)" }}>还没有地点</p>
             </div>
           ) : (
-            <div className="rounded-lg p-4" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div className="rounded-lg p-4" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
               {locations.map((loc) => (
                 <LocNode key={loc.id} node={loc} depth={0} onDelete={handleDeleteLoc} onAdd={handleAddLoc} onEdit={(n) => openEdit(n)} />
               ))}
@@ -219,7 +221,7 @@ export function World() {
               {factions.map((f) => (
                 <div key={f.id} onClick={() => openEdit(f)}
                   className="rounded-lg p-4 animate-fade-in cursor-pointer hover:brightness-95 transition-all"
-                  style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                  style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
                   <div className="flex items-start justify-between">
                     <h3 className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{f.name}</h3>
                     <button onClick={async (e) => { e.stopPropagation(); if (confirm("确定删除？")) { await deleteFaction(f.id); refresh(); } }}
@@ -246,7 +248,7 @@ export function World() {
               {items.map((it) => (
                 <div key={it.id} onClick={() => openEdit(it)}
                   className="rounded-lg p-4 animate-fade-in cursor-pointer hover:brightness-95 transition-all"
-                  style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+                  style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
                   <div className="flex items-start justify-between">
                     <h3 className="text-sm font-medium" style={{ color: "var(--text-primary)" }}>{it.name}</h3>
                     <button onClick={async (e) => { e.stopPropagation(); if (confirm("确定删除？")) { await deleteItem(it.id); refresh(); } }}
@@ -271,7 +273,7 @@ export function World() {
         <>
           <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setShowCreate(false)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="w-full max-w-sm rounded-lg p-6 animate-fade-in" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div className="w-full max-w-sm rounded-lg p-6 animate-fade-in" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
               <h2 className="text-lg font-light" style={{ color: "var(--text-primary)" }}>
                 新建{tab === "locations" ? "地点" : tab === "factions" ? "势力" : "物品"}
               </h2>
@@ -302,7 +304,7 @@ export function World() {
         <>
           <div className="fixed inset-0 z-40 bg-black/40" onClick={() => setEditTarget(null)} />
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="w-full max-w-md rounded-lg p-6 animate-fade-in" style={{ backgroundColor: "var(--surface)", border: "1px solid var(--border)" }}>
+            <div className="w-full max-w-md rounded-lg p-6 animate-fade-in" style={{ background: "var(--glass-bg)", backdropFilter: "blur(12px)", border: "1px solid var(--glass-border)" }}>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-light" style={{ color: "var(--text-primary)" }}>
                   编辑{tab === "locations" ? "地点" : tab === "factions" ? "势力" : "物品"}

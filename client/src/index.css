@@ -16,6 +16,10 @@
   --font-ui: "Inter", "思源黑体", "Source Han Sans SC", sans-serif;
   --font-editor: "思源宋体", "Source Han Serif SC", "Georgia", serif;
   --font-mono: "JetBrains Mono", "Fira Code", monospace;
+  /* 玻璃效果（暗色主题用亮玻璃） */
+  --glass-bg: rgba(255, 255, 255, 0.06);
+  --glass-border: rgba(255, 255, 255, 0.10);
+  --glass-bg-hover: rgba(255, 255, 255, 0.12);
 }
 
 /* ===== 主题: 纸 ===== */
@@ -29,6 +33,10 @@
   --accent-hover: #a0845c;
   --border: #d4cbc0;
   --surface: #ffffff;
+  /* 玻璃效果（亮色主题用暗玻璃） */
+  --glass-bg: rgba(0, 0, 0, 0.05);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glass-bg-hover: rgba(0, 0, 0, 0.10);
 }
 
 /* ===== 主题: 夜 ===== */
@@ -100,3 +108,74 @@ body {
 .tiptap-editor hr { border: none; border-top: 1px solid var(--border); margin: 2em 0; }
 
 ::selection { background: var(--accent); color: var(--bg-primary); }
+
+/* ===== 玻璃拟态工具类 ===== */
+.glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+}
+.glass-panel-hover:hover {
+  background: var(--glass-bg-hover);
+}
+.glass-capsule {
+  background: var(--glass-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--glass-border);
+  border-radius: 9999px;
+}
+.glass-capsule-hover:hover {
+  background: var(--glass-bg-hover);
+}
+
+/* ===== 粒子背景 ===== */
+.particle-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ===== 呼吸光环动画 ===== */
+@keyframes breathe {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(200, 150, 108, 0.3), 0 0 16px rgba(200, 150, 108, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(200, 150, 108, 0.5), 0 0 36px rgba(200, 150, 108, 0.22);
+  }
+}
+
+@keyframes slideDown {
+  0% { opacity: 0; transform: translateY(-8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideUpFade {
+  0% { opacity: 0; transform: translateY(8px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-breathe {
+  animation: breathe 3s ease-in-out infinite;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.animate-slide-up-fade {
+  animation: slideUpFade 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ===== 专注模式过渡 ===== */
+.focus-transition {
+  transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.focus-hidden {
+  opacity: 0;
+  pointer-events: none;
+}
